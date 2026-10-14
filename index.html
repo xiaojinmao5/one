@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>今天吃什么 · 家常菜谱与饮食计划</title>
+<meta name="description" content="勾选家里现有的食材，推荐能做的菜，加入每日三餐，自动汇总热量与购物清单。">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#F4B860">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍳</text></svg>">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+<!-- ========== 顶部栏 ========== -->
+<header class="topbar">
+  <div class="topbar-in">
+    <div class="brand" data-nav="home">
+      <span class="brand-logo">🍳</span>
+      <span class="brand-text">
+        <strong>今天吃什么</strong>
+        <small>家常菜谱 · 饮食计划</small>
+      </span>
+    </div>
+    <div class="topbar-actions">
+      <button class="icon-btn" id="btnSearch" title="搜索 (/)  " aria-label="搜索">🔍</button>
+      <button class="icon-btn" id="btnTheme" title="切换深色模式" aria-label="切换深色模式">🌙</button>
+    </div>
+  </div>
+  <!-- 搜索条 -->
+  <div class="searchbar" id="searchbar" hidden>
+    <input type="search" id="searchInput" placeholder="搜索菜名、食材、标签… 例如：番茄 / 快手 / 低卡" autocomplete="off">
+    <button class="btn-ghost" id="btnSearchClose">取消</button>
+  </div>
+</header>
+
+<main id="app">
+
+  <!-- ===================== 视图 1：首页 / 食材推荐 ===================== -->
+  <section class="view" id="view-home">
+    <div class="hero">
+      <div class="hero-glow"></div>
+      <h1 class="hero-title">今天，吃点什么好？</h1>
+      <p class="hero-sub">勾选家里现有的食材，马上告诉你现在能做什么菜 👇</p>
+      <div class="hero-btns">
+        <button class="btn-primary" id="btnRandom">🎲 随机一道菜</button>
+        <button class="btn-outline" id="btnWheel">🎡 今天吃什么转盘</button>
+      </div>
+    </div>
+
+    <!-- 已选食材 -->
+    <div class="card selected-card">
+      <div class="card-head">
+        <h2 class="card-title">我有的食材 <span class="badge" id="selCount">0</span></h2>
+        <button class="btn-ghost" id="btnClearSel">清空</button>
+      </div>
+      <div class="chip-wrap" id="selectedChips">
+        <p class="muted-sm">还没选食材，下面点一点试试～</p>
+      </div>
+      <div class="card-foot">
+        <button class="btn-primary block" id="btnRecommend">✨ 看看能做什么（推荐菜谱）</button>
+      </div>
+    </div>
+
+    <!-- 食材选择 -->
+    <div class="card">
+      <div class="card-head">
+        <h2 class="card-title">选择食材 <span class="muted-sm" id="ingHint">按分类挑</span></h2>
+        <button class="btn-ghost" id="btnAllIn" title="把冰箱库存里的食材全部选中">全选库存</button>
+      </div>
+      <div class="ing-groups" id="ingGroups"><!-- JS 渲染 --></div>
+    </div>
+
+    <!-- 推荐结果 -->
+    <div id="recommendArea"></div>
+  </section>
+
+  <!-- ===================== 视图 2：每日计划 ===================== -->
+  <section class="view" id="view-plan" hidden>
+    <div class="page-head">
+      <h1 class="page-title">每日计划</h1>
+      <p class="page-sub">按早 / 午 / 晚 / 加餐安排，自动合计热量</p>
+    </div>
+
+    <div class="card">
+      <div class="date-bar">
+        <button class="icon-btn" id="dayPrev" aria-label="前一天">‹</button>
+        <button class="date-display" id="dateDisplay">
+          <strong id="dateMain">—</strong>
+          <small id="dateSub">—</small>
+        </button>
+        <button class="icon-btn" id="dayNext" aria-label="后一天">›</button>
+        <button class="btn-ghost" id="btnToday">今天</button>
+      </div>
+      <input type="date" id="datePicker" class="date-picker">
+    </div>
+
+    <!-- 营养汇总 -->
+    <div class="card nutri-card" id="dayNutri"></div>
+
+    <!-- 四餐 -->
+    <div id="mealList"></div>
+  </section>
+
+  <!-- ===================== 视图 3：菜谱库 ===================== -->
+  <section class="view" id="view-recipes" hidden>
+    <div class="page-head">
+      <h1 class="page-title">菜谱库</h1>
+      <p class="page-sub"><span id="recipeTotal">20</span> 道家常菜 · 点开看做法</p>
+    </div>
+
+    <div class="card filter-card">
+      <div class="cat-seg" id="catSeg">
+        <button class="seg-item is-active" data-cat="">全部</button>
+        <button class="seg-item" data-cat="dish">🍳 菜品</button>
+        <button class="seg-item" data-cat="soup">🍲 汤品</button>
+        <button class="seg-item" data-cat="porridge">🥣 粥品</button>
+        <button class="seg-item" data-cat="staple">🍚 主食</button>
+      </div>
+      <div class="filter-row">
+        <select id="fDifficulty" class="select"><option value="">难度不限</option><option>简单</option><option>中等</option><option>困难</option></select>
+        <select id="fTime" class="select"><option value="">时间不限</option><option value="15">≤15 分钟</option><option value="30">≤30 分钟</option><option value="60">≤60 分钟</option><option value="999">60 分钟以上</option></select>
+        <select id="fMethod" class="select"><option value="">烹饪方式不限</option></select>
+        <select id="fTool" class="select"><option value="">厨具不限</option></select>
+        <select id="fSort" class="select"><option value="default">默认排序</option><option value="kcal-asc">热量从低到高</option><option value="kcal-desc">热量从高到低</option><option value="time-asc">耗时从短到长</option><option value="cost-asc">成本从低到高</option></select>
+      </div>
+      <div class="toggles">
+        <label class="switch"><input type="checkbox" id="fVeg"><span>🥬 素食</span></label>
+        <label class="switch"><input type="checkbox" id="fNoChili"><span>🌶️ 不吃辣</span></label>
+        <label class="switch"><input type="checkbox" id="fNoCilantro"><span>🌿 不吃香菜</span></label>
+        <label class="switch"><input type="checkbox" id="fLowKcal"><span>⚖️ 低热量</span></label>
+      </div>
+      <div class="allergen-row">
+        <span class="filter-label">过敏原避开：</span>
+        <div class="chip-wrap chip-sm" id="allergenChips"></div>
+      </div>
+    </div>
+
+    <div class="grid" id="recipeGrid"></div>
+  </section>
+
+  <!-- ===================== 视图 4：购物清单 ===================== -->
+  <section class="view" id="view-shop" hidden>
+    <div class="page-head">
+      <h1 class="page-title">购物清单</h1>
+      <p class="page-sub">根据当天或整周计划自动生成，勾掉买好的</p>
+    </div>
+
+    <div class="card">
+      <div class="seg" id="shopScope">
+        <button class="seg-item is-active" data-scope="day">当天</button>
+        <button class="seg-item" data-scope="week">整周</button>
+      </div>
+      <div class="shop-actions">
+        <button class="btn-outline sm" id="btnShopAll">全部勾选</button>
+        <button class="btn-outline sm" id="btnShopNone">全部取消</button>
+        <button class="btn-outline sm" id="btnShopClear">清除勾选记录</button>
+      </div>
+      <p class="muted-sm" id="shopMeta"></p>
+    </div>
+
+    <div id="shopList"></div>
+  </section>
+
+  <!-- ===================== 视图 5：周计划 ===================== -->
+  <section class="view" id="view-week" hidden>
+    <div class="page-head">
+      <h1 class="page-title">周计划</h1>
+      <p class="page-sub">周一到周日 · 每天四餐 · 自动算总热量</p>
+    </div>
+
+    <div class="card">
+      <div class="week-bar">
+        <button class="icon-btn" id="weekPrev" aria-label="上一周">‹</button>
+        <button class="date-display" id="weekDisplay">
+          <strong id="weekRange">—</strong>
+          <small id="weekLabel">—</small>
+        </button>
+        <button class="icon-btn" id="weekNext" aria-label="下一周">›</button>
+        <button class="btn-ghost" id="btnThisWeek">本周</button>
+      </div>
+      <div class="week-actions">
+        <button class="btn-outline sm" id="btnCopyLastWeek">📋 复制上周</button>
+        <button class="btn-outline sm" id="btnWeekShop">🛒 整周购物清单</button>
+      </div>
+    </div>
+
+    <div class="week-summary" id="weekSummary"></div>
+    <div id="weekGrid"></div>
+  </section>
+
+  <!-- ===================== 视图 6：我的（冰箱 / 营养 / 设置 / 趣味） ===================== -->
+  <!-- ===================== 视图：冰箱库存 ===================== -->
+  <section class="view" id="view-fridge" hidden>
+    <div class="page-head">
+      <h1 class="page-title">冰箱库存</h1>
+      <p class="page-sub">记下家里有什么、快过期了没，推荐时会优先用掉</p>
+    </div>
+
+    <div class="card" id="fridgeCard">
+      <div class="card-head">
+        <h2 class="card-title">🧊 冰箱库存</h2>
+        <div class="head-btns">
+          <button class="btn-ghost" id="btnFridgeToSel">全选到食材</button>
+          <button class="btn-ghost" id="btnFridgeAdd">+ 添加</button>
+        </div>
+      </div>
+      <p class="muted-sm">有快过期的食材会优先推荐；做完菜可以一键扣库存。</p>
+      <div id="fridgeList"></div>
+      <div class="fridge-form" id="fridgeForm" hidden>
+        <select id="fridgeIng" class="select"></select>
+        <input type="number" id="fridgeQty" class="input" value="1" min="0" step="0.5" placeholder="数量">
+        <input type="text" id="fridgeUnit" class="input narrow" value="份" placeholder="单位">
+        <input type="date" id="fridgeExp" class="input">
+        <button class="btn-primary sm" id="btnFridgeSave">保存</button>
+        <button class="btn-ghost sm" id="btnFridgeCancel">取消</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== 视图 6：我的 ===================== -->
+  <section class="view" id="view-me" hidden>
+    <div class="page-head">
+      <h1 class="page-title">我的</h1>
+      <p class="page-sub">营养目标 · 打卡 · 设置</p>
+    </div>
+
+    <!-- 营养目标 -->
+    <div class="card">
+      <div class="card-head"><h2 class="card-title">🎯 营养目标</h2></div>
+      <div class="seg" id="goalSeg">
+        <button class="seg-item" data-goal="cut">减脂</button>
+        <button class="seg-item is-active" data-goal="keep">维持</button>
+        <button class="seg-item" data-goal="bulk">增肌</button>
+        <button class="seg-item" data-goal="custom">自定义</button>
+      </div>
+      <div class="goal-inputs" id="goalInputs">
+        <label>热量目标 <input type="number" id="goalKcal" class="input sm" step="10"> kcal</label>
+        <label>蛋白质 <input type="number" id="goalP" class="input sm" step="5"> g</label>
+        <label>碳水 <input type="number" id="goalC" class="input sm" step="5"> g</label>
+        <label>脂肪 <input type="number" id="goalF" class="input sm" step="5"> g</label>
+      </div>
+      <div class="exercise-row">
+        <label>今日运动消耗 <input type="number" id="exerciseKcal" class="input sm" step="10" placeholder="0"> kcal</label>
+        <p class="muted-sm" id="netKcalTip"></p>
+      </div>
+      <p class="disclaimer">⚠️ 本页所有热量与营养数据均为<strong>估算值，仅供参考，不构成医疗或营养建议</strong>。身体有特殊状况请咨询专业医生或营养师。</p>
+    </div>
+
+    <!-- 打卡 / 挑战 / 照片墙 -->
+    <div class="card">
+      <div class="card-head"><h2 class="card-title">🔥 做饭打卡</h2></div>
+      <div class="stat-row" id="statRow"></div>
+      <div class="challenge" id="challengeBox"></div>
+      <div class="challenge-actions">
+        <button class="btn-outline sm" id="btnCheckin">✅ 今天自己做饭了</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <h2 class="card-title">📸 做饭照片墙</h2>
+        <button class="btn-ghost" id="btnPhotoAdd">+ 加照片</button>
+      </div>
+      <div class="photo-wall" id="photoWall"></div>
+      <input type="file" id="photoInput" accept="image/*" hidden multiple>
+    </div>
+
+    <!-- 设置 -->
+    <div class="card">
+      <div class="card-head"><h2 class="card-title">⚙️ 设置</h2></div>
+      <div class="set-row">
+        <span>深色模式</span>
+        <label class="switch"><input type="checkbox" id="setDark"><span>开启</span></label>
+      </div>
+      <div class="set-row">
+        <span>默认份数</span>
+        <div class="stepper">
+          <button id="setServesMinus">−</button><b id="setServes">1</b><button id="setServesPlus">+</button>
+        </div>
+      </div>
+      <div class="set-row col">
+        <span>数据管理（自动保存在本机浏览器）</span>
+        <div class="set-btns">
+          <button class="btn-outline sm" id="btnExport">⬇️ 导出 JSON</button>
+          <button class="btn-outline sm" id="btnImport">⬆️ 导入 JSON</button>
+          <button class="btn-outline sm danger" id="btnReset">🗑️ 清空全部数据</button>
+        </div>
+        <input type="file" id="importInput" accept=".json,application/json" hidden>
+      </div>
+      <div class="set-row col">
+        <span>关于</span>
+        <p class="muted-sm">「今天吃什么」v1.0 · 纯前端离线应用，数据仅保存在你的浏览器里。菜谱为家常做法整理，热量为估算值。</p>
+        <p class="muted-sm">快捷键：<kbd>1</kbd> 首页 <kbd>2</kbd> 计划 <kbd>3</kbd> 菜谱 <kbd>4</kbd> 购物 <kbd>5</kbd> 冰箱 <kbd>6</kbd> 我的 · <kbd>/</kbd> 搜索 · <kbd>R</kbd> 随机 · <kbd>Esc</kbd> 关闭</p>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ========== 底部导航 ========== -->
+<nav class="tabbar">
+  <button class="tab is-active" data-nav="home"><i>🏠</i><span>首页</span></button>
+  <button class="tab" data-nav="plan"><i>📅</i><span>计划</span></button>
+  <button class="tab" data-nav="recipes"><i>📖</i><span>菜谱</span></button>
+  <button class="tab" data-nav="shop"><i>🛒</i><span>购物</span></button>
+  <button class="tab" data-nav="fridge"><i>🧊</i><span>冰箱</span></button>
+  <button class="tab" data-nav="me"><i>👤</i><span>我的</span></button>
+</nav>
+
+<!-- ========== 详情弹层 ========== -->
+<div class="sheet" id="sheet" hidden>
+  <div class="sheet-bg" data-close></div>
+  <div class="sheet-panel" id="sheetPanel" role="dialog" aria-modal="true"></div>
+</div>
+
+<!-- ========== 转盘弹层 ========== -->
+<div class="sheet" id="wheelSheet" hidden>
+  <div class="sheet-bg" data-close></div>
+  <div class="sheet-panel sheet-center" id="wheelPanel" role="dialog" aria-modal="true"></div>
+</div>
+
+<!-- ========== 轻提示 ========== -->
+<div class="toast" id="toast" hidden></div>
+
+<!-- ========== 底部浮动：快捷添加 ========== -->
+<button class="fab" id="fab" hidden>＋ 加入计划</button>
+
+<script src="assets/js/data.js"></script>
+<script src="assets/js/app.js"></script>
+</body>
+</html>
