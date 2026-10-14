@@ -5,10 +5,788 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>今天吃什么 · 家常菜谱与饮食计划</title>
 <meta name="description" content="勾选家里现有的食材，推荐能做的菜，加入每日三餐，自动汇总热量与购物清单。">
-<link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#F4B860">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍳</text></svg>">
-<link rel="stylesheet" href="assets/css/style.css">
+<style>
+/* ===== 样式（原 assets/css/style.css） ===== */
+/* ==========================================================
+   今天吃什么 · 样式表
+   移动优先 · 卡片式 · 浅色为主 + 手动深色
+   ========================================================== */
+
+/* ---------- 主题变量 ---------- */
+:root{
+  --bg:#FBF6EF;
+  --bg-2:#F5EDE2;
+  --card:#FFFFFF;
+  --card-2:#FDFAF6;
+  --line:#EFE4D6;
+  --line-2:#E4D6C4;
+
+  --text:#3A3229;
+  --text-2:#7A6C5D;
+  --text-3:#A99B8B;
+
+  --brand:#F4A259;        /* 主色 暖橙 */
+  --brand-d:#E2863A;
+  --brand-soft:#FDEEDD;
+  --green:#7FA860;
+  --green-soft:#EAF3E2;
+  --red:#E0664F;
+  --red-soft:#FCE7E2;
+  --blue:#6C93C7;
+  --blue-soft:#E7EEF8;
+  --purple:#A28BC7;
+  --purple-soft:#F0EAF8;
+  --yellow-soft:#FDF6DC;
+
+  --radius:18px;
+  --radius-sm:12px;
+  --radius-lg:24px;
+  --gap:14px;
+  --shadow:0 2px 6px rgba(122,96,66,.06), 0 10px 24px -12px rgba(122,96,66,.16);
+  --shadow-lg:0 6px 18px rgba(122,96,66,.10), 0 24px 48px -20px rgba(122,96,66,.26);
+  --safe-b:env(safe-area-inset-bottom, 0px);
+}
+
+html[data-theme="dark"]{
+  --bg:#191519;
+  --bg-2:#221C22;
+  --card:#241E24;
+  --card-2:#2B242B;
+  --line:#3A3040;
+  --line-2:#4A3E50;
+
+  --text:#F0E9E3;
+  --text-2:#B4A6A0;
+  --text-3:#867A84;
+
+  --brand:#F4A259;
+  --brand-d:#FFB871;
+  --brand-soft:#3A2C24;
+  --green:#9CC47C;
+  --green-soft:#28321F;
+  --red:#F08A72;
+  --red-soft:#3A231F;
+  --blue:#8CB0E0;
+  --blue-soft:#212B3A;
+  --purple:#BCA6DE;
+  --purple-soft:#2C2438;
+  --yellow-soft:#332C1C;
+
+  --shadow:0 2px 6px rgba(0,0,0,.3), 0 10px 24px -12px rgba(0,0,0,.5);
+  --shadow-lg:0 6px 18px rgba(0,0,0,.35), 0 24px 48px -20px rgba(0,0,0,.6);
+}
+
+/* ---------- 基础 ---------- */
+*{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent;}
+/* 关键：让 hidden 属性优先于任何 display 声明，避免被 .sheet/.toast/.fab 的 display 覆盖 */
+[hidden]{display:none !important;}
+html{-webkit-text-size-adjust:100%;}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Hiragino Sans GB","Noto Sans SC",sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  line-height:1.6;
+  font-size:15px;
+  padding-bottom:calc(84px + var(--safe-b));   /* 给底部导航留位置 */
+  transition:background .25s, color .25s;
+  overflow-x:hidden;
+}
+img{max-width:100%; display:block;}
+button,input,select,textarea{font:inherit; color:inherit; outline:none; border:none; background:none;}
+button{cursor:pointer;}
+h1,h2,h3{line-height:1.3; font-weight:800;}
+kbd{background:var(--bg-2); border:1px solid var(--line-2); border-radius:5px; padding:1px 5px; font-size:11px; font-family:ui-monospace,monospace;}
+
+/* ---------- 顶部栏 ---------- */
+.topbar{
+  position:sticky; top:0; z-index:50;
+  background:color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter:saturate(180%) blur(14px);
+  -webkit-backdrop-filter:saturate(180%) blur(14px);
+  border-bottom:1px solid var(--line);
+}
+.topbar-in{
+  max-width:760px; margin:0 auto; padding:10px 16px;
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+}
+.brand{display:flex; align-items:center; gap:10px; cursor:pointer; min-width:0;}
+.brand-logo{font-size:26px; flex:none;}
+.brand-text{display:flex; flex-direction:column; min-width:0; line-height:1.15;}
+.brand-text strong{font-size:16.5px; letter-spacing:.4px; white-space:nowrap;}
+.brand-text small{font-size:11px; color:var(--text-3); white-space:nowrap;}
+.topbar-actions{display:flex; gap:6px; flex:none;}
+
+.icon-btn{
+  width:38px; height:38px; border-radius:12px;
+  display:grid; place-items:center; font-size:17px;
+  background:var(--card); border:1px solid var(--line);
+  transition:transform .15s, background .2s;
+}
+.icon-btn:active{transform:scale(.92);}
+
+.searchbar{display:flex; gap:8px; padding:0 16px 12px; max-width:760px; margin:0 auto;}
+.searchbar input{
+  flex:1; height:42px; border-radius:12px; padding:0 14px;
+  background:var(--card); border:1px solid var(--line); font-size:15px;
+}
+.searchbar input:focus{border-color:var(--brand);}
+
+/* ---------- 布局 ---------- */
+main{max-width:760px; margin:0 auto; padding:16px 16px 20px;}
+.view{animation:fadeUp .32s ease both;}
+@keyframes fadeUp{from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:none;}}
+
+.page-head{margin:2px 0 14px;}
+.page-title{font-size:24px; letter-spacing:.5px;}
+.page-sub{color:var(--text-3); font-size:13px; margin-top:2px;}
+
+/* ---------- 首页 Hero ---------- */
+.hero{
+  position:relative; overflow:hidden;
+  background:linear-gradient(135deg,#FFF0DC 0%,#FFE3C6 45%,#FFD9E2 100%);
+  border-radius:var(--radius-lg);
+  padding:22px 20px 20px;
+  margin-bottom:var(--gap);
+  box-shadow:var(--shadow);
+}
+html[data-theme="dark"] .hero{background:linear-gradient(135deg,#3A2A1E 0%,#3A2430 60%,#2E2338 100%);}
+.hero-glow{
+  position:absolute; width:210px; height:210px; right:-60px; top:-70px; border-radius:50%;
+  background:radial-gradient(circle,rgba(244,162,89,.55),transparent 68%); filter:blur(6px);
+  animation:float 7s ease-in-out infinite;
+}
+@keyframes float{0%,100%{transform:translateY(0)} 50%{transform:translateY(14px)}}
+.hero-title{font-size:25px; letter-spacing:.6px; position:relative;}
+.hero-sub{color:var(--text-2); font-size:13.5px; margin:6px 0 14px; position:relative;}
+.hero-btns{display:flex; gap:9px; flex-wrap:wrap; position:relative;}
+
+/* ---------- 按钮 ---------- */
+.btn-primary,.btn-outline,.btn-ghost,.btn-danger{
+  border-radius:12px; padding:10px 16px; font-size:14px; font-weight:700;
+  transition:transform .14s, filter .2s, background .2s;
+  display:inline-flex; align-items:center; justify-content:center; gap:6px;
+}
+.btn-primary{background:var(--brand); color:#fff; box-shadow:0 6px 16px -8px var(--brand-d);}
+.btn-primary:active{transform:scale(.96);}
+.btn-primary.block{width:100%; padding:13px;}
+.btn-outline{background:var(--card); border:1.5px solid var(--line-2); color:var(--text);}
+.btn-outline:active{transform:scale(.96);}
+.btn-ghost{color:var(--text-2); font-size:13px; padding:7px 10px; border-radius:10px; font-weight:600;}
+.btn-ghost:active{background:var(--bg-2);}
+.btn-danger{background:var(--red); color:#fff;}
+.btn-outline.danger{color:var(--red); border-color:color-mix(in srgb,var(--red) 35%, transparent);}
+.sm{padding:7px 12px; font-size:13px; border-radius:10px;}
+
+/* ---------- 卡片 ---------- */
+.card{
+  background:var(--card); border:1px solid var(--line);
+  border-radius:var(--radius); padding:16px; margin-bottom:var(--gap);
+  box-shadow:var(--shadow);
+}
+.card-head{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px;}
+.card-title{font-size:16px; display:flex; align-items:center; gap:7px;}
+.card-title .badge{
+  background:var(--brand); color:#fff; font-size:11.5px; padding:1px 8px;
+  border-radius:20px; font-weight:700;
+}
+.card-foot{margin-top:12px;}
+.muted-sm{color:var(--text-3); font-size:12.5px; line-height:1.6;}
+
+/* ---------- 食材贴纸（chips） ---------- */
+.chip-wrap{display:flex; flex-wrap:wrap; gap:8px;}
+.chip{
+  display:inline-flex; align-items:center; gap:5px;
+  background:var(--bg-2); border:1px solid var(--line-2);
+  border-radius:999px; padding:6px 12px 6px 9px; font-size:13px; font-weight:600;
+  transition:transform .14s, background .2s, border-color .2s;
+}
+.chip .em{font-size:15px;}
+.chip.ond{background:var(--brand-soft); border-color:var(--brand); color:var(--brand-d);}
+html[data-theme="dark"] .chip.ond{color:var(--brand);}
+.chip:active{transform:scale(.94);}
+.chip.sel{background:var(--brand); color:#fff; border-color:var(--brand);}
+.chip.sel .x{opacity:.8; font-size:12px;}
+.chip.sm{padding:5px 10px 5px 8px; font-size:12px;}
+
+/* ---------- 食材分组 ---------- */
+.ing-groups{display:flex; flex-direction:column; gap:14px;}
+
+/* 食材大类切换栏 */
+.kind-bar .chip .cnt{
+  font-style:normal; font-size:10px; opacity:.7; margin-left:1px;
+}
+
+/* 分组：不加底色，保持素净（按用户要求，只有上方「我有的食材」有底色） */
+.ing-group{
+  background:transparent;
+  border:none;
+  border-radius:0;
+  padding:0;
+}
+.ing-group-title{
+  font-size:12px; font-weight:800; color:var(--text-3); letter-spacing:1.2px;
+  margin-bottom:7px;
+  display:flex; align-items:center; gap:6px;
+}
+.ing-group-title .gc{
+  font-size:10.5px; font-weight:700; color:var(--text-3);
+  background:var(--bg-2); border-radius:20px; padding:0 7px; letter-spacing:0;
+}
+
+/* ---------- 「我有的食材」卡片：底色强调（用户要求） ---------- */
+.selected-card{
+  background:linear-gradient(150deg, var(--brand-soft) 0%, var(--card) 68%);
+  border-color:color-mix(in srgb, var(--brand) 30%, var(--line));
+}
+html[data-theme="dark"] .selected-card{
+  background:linear-gradient(150deg, var(--brand-soft) 0%, var(--card) 68%);
+  border-color:color-mix(in srgb, var(--brand) 34%, var(--line));
+}
+.selected-card .card-title{color:var(--brand-d);}
+html[data-theme="dark"] .selected-card .card-title{color:var(--brand);}
+
+/* 菜谱类型分段（菜品/汤品/粥品/主食） */
+.cat-seg{
+  display:flex; gap:5px; background:var(--bg-2); padding:4px; border-radius:13px;
+  border:1px solid var(--line); margin-bottom:11px; overflow-x:auto;
+  -webkit-overflow-scrolling:touch; scrollbar-width:none;
+}
+.cat-seg::-webkit-scrollbar{display:none;}
+.cat-seg .seg-item{
+  flex:1 0 auto; padding:8px 12px; border-radius:10px; font-size:13px; font-weight:700;
+  color:var(--text-2); transition:.2s; white-space:nowrap;
+}
+.cat-seg .seg-item.is-active{background:var(--card); color:var(--brand-d); box-shadow:var(--shadow);}
+html[data-theme="dark"] .cat-seg .seg-item.is-active{color:var(--brand);}
+
+/* 类型标签 */
+.tag.cat{background:var(--purple-soft); color:var(--purple); font-weight:700;}
+
+.hint-inline{font-size:11px; font-weight:600; color:var(--text-3); letter-spacing:0;}
+
+/* ---------- 推荐结果 ---------- */
+.rec-head{display:flex; align-items:baseline; justify-content:space-between; margin:6px 2px 10px;}
+.rec-head h2{font-size:18px;}
+.rec-item{
+  background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+  padding:14px; margin-bottom:12px; box-shadow:var(--shadow); position:relative; overflow:hidden;
+  cursor:pointer; transition:transform .16s;
+}
+.rec-item:active{transform:scale(.985);}
+.rec-item::before{
+  content:''; position:absolute; left:0; top:0; bottom:0; width:4px;
+  background:linear-gradient(180deg,var(--brand),var(--purple));
+}
+.rec-top{display:flex; align-items:center; gap:11px;}
+.rec-emoji{
+  width:48px; height:48px; flex:none; border-radius:14px; display:grid; place-items:center;
+  font-size:24px; background:var(--bg-2); border:1px solid var(--line);
+}
+.rec-info{flex:1; min-width:0;}
+.rec-name{font-size:16.5px; font-weight:800; letter-spacing:.3px;}
+.rec-meta{font-size:12px; color:var(--text-3); display:flex; gap:8px; flex-wrap:wrap; margin-top:2px;}
+.rec-score{
+  flex:none; text-align:center; font-weight:800; font-size:13px;
+  background:var(--green-soft); color:var(--green); border-radius:12px; padding:6px 10px; line-height:1.2;
+}
+.rec-score b{display:block; font-size:17px;}
+.rec-tags{display:flex; gap:6px; flex-wrap:wrap; margin-top:9px;}
+.tag{
+  font-size:11.5px; padding:3px 9px; border-radius:8px;
+  background:var(--bg-2); color:var(--text-2); font-weight:600;
+}
+.tag.ok{background:var(--green-soft); color:var(--green);}
+.tag.miss{background:var(--red-soft); color:var(--red);}
+.tag.sea{background:var(--blue-soft); color:var(--blue);}
+.tag.warn{background:var(--yellow-soft); color:#B08000;}
+html[data-theme="dark"] .tag.warn{color:#E0B84C;}
+
+.match-bar{height:6px; border-radius:6px; background:var(--bg-2); margin-top:10px; overflow:hidden;}
+.match-bar i{display:block; height:100%; border-radius:6px; background:linear-gradient(90deg,var(--brand),var(--green)); transition:width .5s ease;}
+
+/* ---------- 网格（菜谱卡） ---------- */
+.grid{display:grid; gap:12px;}
+@media(min-width:560px){ .grid{grid-template-columns:1fr 1fr;} }
+.rcard{
+  background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+  padding:14px; box-shadow:var(--shadow); cursor:pointer; transition:transform .16s;
+  display:flex; flex-direction:column; gap:8px;
+}
+.rcard:active{transform:scale(.98);}
+.rcard-top{display:flex; gap:11px; align-items:center;}
+.rcard h3{font-size:15.5px;}
+.rcard .kcal{
+  margin-left:auto; flex:none; font-size:12px; font-weight:800; color:var(--brand-d);
+  background:var(--brand-soft); padding:4px 9px; border-radius:9px; white-space:nowrap;
+}
+html[data-theme="dark"] .rcard .kcal{color:var(--brand);}
+.rcard .ings{font-size:12px; color:var(--text-3); display:flex; gap:6px; flex-wrap:wrap;}
+.rcard .ings span{display:inline-flex; align-items:center; gap:3px;}
+.rcard-foot{display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin-top:auto; padding-top:4px;}
+
+/* ---------- 空状态 ---------- */
+.empty{
+  text-align:center; padding:34px 18px; color:var(--text-3);
+  background:var(--card); border:1px dashed var(--line-2); border-radius:var(--radius);
+}
+.empty .big{font-size:38px; display:block; margin-bottom:8px; filter:grayscale(.15);}
+.empty p{font-size:13.5px; line-height:1.8;}
+
+/* ---------- 每日计划 ---------- */
+.date-bar{display:flex; align-items:center; gap:8px;}
+.date-display{
+  flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  background:var(--bg-2); border-radius:14px; padding:7px 10px; border:1px solid var(--line);
+}
+.date-display strong{font-size:16px; letter-spacing:.5px;}
+.date-display small{font-size:11.5px; color:var(--text-3);}
+.date-picker{
+  width:100%; margin-top:10px; height:38px; border-radius:11px; padding:0 12px;
+  background:var(--bg-2); border:1px solid var(--line); color:var(--text); font-size:13.5px;
+}
+
+/* ---------- 营养汇总 ---------- */
+.nutri-card{background:linear-gradient(135deg,var(--card),var(--card-2));}
+.nutri-top{display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;}
+.nutri-kcal{font-size:32px; font-weight:900; letter-spacing:-1px; line-height:1;}
+.nutri-kcal span{font-size:13px; font-weight:700; color:var(--text-3); margin-left:4px; letter-spacing:0;}
+.nutri-goal{font-size:12px; color:var(--text-3); text-align:right;}
+.ring{width:56px; height:56px; flex:none;}
+.ring circle{fill:none; stroke-width:7; stroke-linecap:round;}
+.ring .bg{stroke:var(--bg-2);}
+.ring .fg{stroke:var(--brand); transition:stroke-dashoffset .6s ease;}
+.nutri-bars{display:grid; gap:9px;}
+.nbar{display:grid; grid-template-columns:44px 1fr 62px; align-items:center; gap:8px; font-size:12px;}
+.nbar .lbl{font-weight:700; color:var(--text-2);}
+.nbar .track{height:8px; border-radius:8px; background:var(--bg-2); overflow:hidden;}
+.nbar .track i{display:block; height:100%; border-radius:8px; transition:width .5s;}
+.nbar .val{text-align:right; color:var(--text-3); font-variant-numeric:tabular-nums;}
+
+/* ---------- 餐次 ---------- */
+.meal{
+  background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+  margin-bottom:12px; box-shadow:var(--shadow); overflow:hidden;
+}
+.meal-head{
+  display:flex; align-items:center; gap:9px; padding:12px 14px;
+  border-bottom:1px solid var(--line); background:var(--card-2);
+}
+.meal-head .m-emoji{font-size:19px;}
+.meal-head h3{font-size:14.5px;}
+.meal-head .m-kcal{
+  margin-left:auto; font-size:12px; font-weight:800; color:var(--brand-d);
+  background:var(--brand-soft); padding:3px 9px; border-radius:8px;
+}
+html[data-theme="dark"] .meal-head .m-kcal{color:var(--brand);}
+.meal-head .m-add{
+  width:28px; height:28px; border-radius:9px; display:grid; place-items:center;
+  background:var(--brand); color:#fff; font-size:16px; font-weight:700; flex:none;
+}
+.meal-body{padding:10px 12px;}
+.meal-body .m-empty{padding:14px 4px; color:var(--text-3); font-size:13px; text-align:center;}
+
+.plan-item{
+  display:flex; align-items:center; gap:10px; padding:9px 10px; border-radius:12px;
+  background:var(--bg-2); margin-bottom:7px; transition:opacity .2s;
+}
+.plan-item:last-child{margin-bottom:0;}
+.plan-item.done{opacity:.5;}
+.plan-item.done .pi-name{text-decoration:line-through;}
+.pi-check{
+  width:22px; height:22px; flex:none; border-radius:7px; border:2px solid var(--line-2);
+  display:grid; place-items:center; font-size:12px; color:transparent; font-weight:900;
+  transition:background .18s, border-color .18s;
+}
+.plan-item.done .pi-check{background:var(--green); border-color:var(--green); color:#fff;}
+.pi-info{flex:1; min-width:0;}
+.pi-name{font-size:14px; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.pi-meta{font-size:11.5px; color:var(--text-3);}
+.pi-del{
+  width:28px; height:28px; border-radius:9px; display:grid; place-items:center;
+  color:var(--text-3); font-size:15px; flex:none;
+}
+.pi-del:active{background:var(--red-soft); color:var(--red);}
+
+/* ---------- 筛选 ---------- */
+.filter-card{padding:14px;}
+.filter-row{display:grid; grid-template-columns:1fr 1fr; gap:9px; margin-bottom:11px;}
+.select{
+  width:100%; height:38px; border-radius:11px; padding:0 10px; font-size:13px;
+  background:var(--bg-2); border:1px solid var(--line); color:var(--text);
+  appearance:none; background-image:linear-gradient(45deg,transparent 50%,var(--text-3) 50%),linear-gradient(135deg,var(--text-3) 50%,transparent 50%);
+  background-position:calc(100% - 16px) 17px, calc(100% - 11px) 17px;
+  background-size:5px 5px, 5px 5px; background-repeat:no-repeat; padding-right:28px;
+}
+.toggles{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:11px;}
+.switch{display:inline-flex; align-items:center; gap:6px; cursor:pointer;}
+.switch input{position:absolute; opacity:0; pointer-events:none;}
+.switch span{
+  font-size:12.5px; padding:6px 11px; border-radius:999px;
+  background:var(--bg-2); border:1px solid var(--line-2); font-weight:600; transition:.2s;
+}
+.switch input:checked + span{background:var(--brand); color:#fff; border-color:var(--brand);}
+.allergen-row{display:flex; align-items:flex-start; gap:8px; flex-wrap:wrap; padding-top:10px; border-top:1px dashed var(--line);}
+.filter-label{font-size:12px; color:var(--text-3); font-weight:700; padding-top:5px;}
+
+/* ---------- 购物清单 ---------- */
+.seg{
+  display:flex; gap:5px; background:var(--bg-2); padding:4px; border-radius:13px; border:1px solid var(--line);
+}
+.seg-item{
+  flex:1; padding:8px; border-radius:10px; font-size:13.5px; font-weight:700; color:var(--text-2);
+  transition:.2s;
+}
+.seg-item.is-active{background:var(--card); color:var(--brand-d); box-shadow:var(--shadow);}
+html[data-theme="dark"] .seg-item.is-active{color:var(--brand);}
+.shop-actions{display:flex; gap:7px; flex-wrap:wrap; margin:11px 0 8px;}
+
+.shop-group{
+  background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+  margin-bottom:12px; box-shadow:var(--shadow); overflow:hidden;
+}
+.shop-group h3{
+  font-size:14px; padding:12px 14px; background:var(--card-2); border-bottom:1px solid var(--line);
+  display:flex; align-items:center; gap:8px;
+}
+.shop-group h3 .cnt{margin-left:auto; font-size:11.5px; color:var(--text-3); font-weight:600;}
+.shop-group ul{list-style:none; padding:6px 8px 10px;}
+.shop-group li{
+  display:flex; align-items:center; gap:10px; padding:9px 8px; border-radius:11px; font-size:14px;
+  border-bottom:1px dashed var(--line);
+}
+.shop-group li:last-child{border-bottom:none;}
+.shop-group li .em{font-size:17px; width:22px; text-align:center; flex:none;}
+.shop-group li .qty{margin-left:auto; font-size:12px; color:var(--text-3);}
+.shop-group li.checked{opacity:.45;}
+.shop-group li.checked .nm{text-decoration:line-through;}
+.shop-check{
+  width:21px; height:21px; flex:none; border-radius:7px; border:2px solid var(--line-2);
+  display:grid; place-items:center; font-size:11px; color:transparent; font-weight:900;
+}
+.shop-group li.checked .shop-check{background:var(--green); border-color:var(--green); color:#fff;}
+
+/* ---------- 周计划 ---------- */
+.week-bar{display:flex; align-items:center; gap:8px;}
+.week-actions{display:flex; gap:7px; flex-wrap:wrap; margin-top:11px;}
+.week-summary{
+  display:grid; grid-template-columns:repeat(3,1fr); gap:9px; margin-bottom:var(--gap);
+}
+.wsum{
+  background:var(--card); border:1px solid var(--line); border-radius:14px; padding:11px 8px;
+  text-align:center; box-shadow:var(--shadow);
+}
+.wsum b{display:block; font-size:19px; letter-spacing:-.5px;}
+.wsum small{font-size:11px; color:var(--text-3);}
+
+.wday{
+  background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+  margin-bottom:11px; box-shadow:var(--shadow); overflow:hidden;
+}
+.wday-head{
+  display:flex; align-items:center; gap:9px; padding:11px 14px; cursor:pointer;
+  background:var(--card-2); border-bottom:1px solid var(--line);
+}
+.wday-head.today{background:var(--brand-soft);}
+.wday-head h3{font-size:14.5px;}
+.wday-head .wdate{font-size:11.5px; color:var(--text-3);}
+.wday-head .wkcal{
+  margin-left:auto; font-size:12px; font-weight:800; color:var(--brand-d);
+  background:var(--bg-2); padding:3px 9px; border-radius:8px;
+}
+html[data-theme="dark"] .wday-head .wkcal{color:var(--brand);}
+.wday-body{padding:8px 10px 11px;}
+.wmeal-row{display:flex; align-items:flex-start; gap:8px; padding:6px 4px; border-bottom:1px dashed var(--line);}
+.wmeal-row:last-child{border-bottom:none;}
+.wmeal-label{
+  flex:none; width:46px; font-size:11.5px; font-weight:800; color:var(--text-3); padding-top:5px;
+}
+.wmeal-items{flex:1; display:flex; flex-wrap:wrap; gap:6px; min-height:30px; align-items:center;}
+.wmeal-item{
+  display:inline-flex; align-items:center; gap:4px; font-size:12px; font-weight:600;
+  background:var(--bg-2); border:1px solid var(--line-2); border-radius:9px; padding:4px 6px 4px 8px;
+}
+.wmeal-item button{color:var(--text-3); font-size:13px; padding:0 2px;}
+.wadd{
+  font-size:12px; font-weight:700; color:var(--brand-d); background:var(--brand-soft);
+  border:1px dashed var(--brand); border-radius:9px; padding:4px 10px;
+}
+html[data-theme="dark"] .wadd{color:var(--brand);}
+
+/* ---------- 冰箱 ---------- */
+.fridge-item{
+  display:flex; align-items:center; gap:10px; padding:10px; border-radius:13px;
+  background:var(--bg-2); margin-bottom:8px;
+}
+.fridge-item.expiring{background:var(--red-soft);}
+.fridge-item .em{font-size:21px; width:26px; text-align:center; flex:none;}
+.fridge-item .f-info{flex:1; min-width:0;}
+.fridge-item .f-name{font-size:14px; font-weight:700;}
+.fridge-item .f-meta{font-size:11.5px; color:var(--text-3);}
+.fridge-item.expiring .f-meta{color:var(--red); font-weight:700;}
+.fridge-item .f-del{width:28px; height:28px; border-radius:9px; display:grid; place-items:center; color:var(--text-3);}
+.fridge-form{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:10px; padding-top:11px; border-top:1px dashed var(--line);}
+.fridge-form .select,.fridge-form .input{height:38px;}
+.input{
+  width:100%; height:38px; border-radius:11px; padding:0 11px; font-size:14px;
+  background:var(--bg-2); border:1px solid var(--line); color:var(--text);
+}
+.input.narrow{max-width:82px;}
+.input.sm{height:34px; width:82px; display:inline-block; margin-left:6px;}
+.input:focus{border-color:var(--brand);}
+
+/* ---------- 营养目标 ---------- */
+.goal-inputs{display:grid; grid-template-columns:1fr; gap:8px; margin-top:11px;}
+.goal-inputs label{display:flex; align-items:center; justify-content:space-between; font-size:13.5px; color:var(--text-2); font-weight:600;}
+.exercise-row{margin-top:11px; padding-top:11px; border-top:1px dashed var(--line);}
+.exercise-row label{display:flex; align-items:center; justify-content:space-between; font-size:13.5px; font-weight:600; color:var(--text-2);}
+.disclaimer{
+  margin-top:12px; padding:10px 12px; border-radius:12px; font-size:12px; line-height:1.7;
+  background:var(--yellow-soft); color:var(--text-2);
+}
+.disclaimer strong{color:var(--red);}
+
+/* ---------- 打卡 / 统计 ---------- */
+.stat-row{display:grid; grid-template-columns:repeat(3,1fr); gap:9px;}
+.stat{background:var(--bg-2); border-radius:14px; padding:12px 8px; text-align:center;}
+.stat b{display:block; font-size:22px; letter-spacing:-.6px; color:var(--brand-d);}
+html[data-theme="dark"] .stat b{color:var(--brand);}
+.stat small{font-size:11px; color:var(--text-3);}
+.challenge{
+  margin:12px 0; padding:12px 14px; border-radius:14px;
+  background:linear-gradient(135deg,var(--green-soft),var(--blue-soft));
+}
+.challenge .ch-title{font-size:13.5px; font-weight:800; margin-bottom:5px;}
+.challenge .ch-track{height:9px; border-radius:9px; background:var(--card); overflow:hidden; margin:8px 0 5px;}
+.challenge .ch-track i{display:block; height:100%; background:linear-gradient(90deg,var(--green),var(--blue)); border-radius:9px; transition:width .5s;}
+.challenge-actions{display:flex; gap:8px; flex-wrap:wrap;}
+
+/* ---------- 照片墙 ---------- */
+.photo-wall{display:grid; grid-template-columns:repeat(3,1fr); gap:8px;}
+.photo-wall .ph{
+  position:relative; aspect-ratio:1; border-radius:12px; overflow:hidden;
+  background:var(--bg-2); border:1px solid var(--line);
+}
+.photo-wall .ph img{width:100%; height:100%; object-fit:cover;}
+.photo-wall .ph button{
+  position:absolute; top:3px; right:3px; width:22px; height:22px; border-radius:7px;
+  background:rgba(0,0,0,.55); color:#fff; font-size:12px; display:grid; place-items:center;
+}
+.photo-wall .ph-empty{
+  grid-column:1/-1; text-align:center; padding:22px; color:var(--text-3); font-size:13px;
+  border:1px dashed var(--line-2); border-radius:12px;
+}
+
+/* ---------- 设置 ---------- */
+.set-row{
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  padding:11px 0; border-bottom:1px dashed var(--line); font-size:14px;
+}
+.set-row.col{flex-direction:column; align-items:stretch; gap:8px;}
+.set-row:last-child{border-bottom:none; padding-bottom:0;}
+.set-btns{display:flex; gap:8px; flex-wrap:wrap;}
+.stepper{display:flex; align-items:center; gap:10px;}
+.stepper button{
+  width:30px; height:30px; border-radius:9px; background:var(--bg-2);
+  border:1px solid var(--line); font-size:16px; font-weight:700;
+}
+.stepper b{min-width:22px; text-align:center;}
+
+/* 「选择食材」卡片内的大类切换栏（.kind-bar）：单独加淡蓝底（用户指定只换这一条） */
+.kind-bar{
+  display:flex; flex-wrap:wrap; gap:7px;
+  background:#F5F8FC;
+  border:1px solid #D9E6F5;
+  border-radius:14px;
+  padding:10px 11px;
+  margin-bottom:14px;
+}
+html[data-theme="dark"] .kind-bar{
+  background:#1C222B;
+  border-color:#2E3A48;
+}
+/* 按钮栏里的按钮用白底，从淡蓝底上浮起 */
+.kind-bar .chip{background:#fff; border-color:#DCE7F4;}
+html[data-theme="dark"] .kind-bar .chip{background:#28303A; border-color:#394654;}
+.kind-bar .chip.ond{background:var(--brand); border-color:var(--brand); color:#fff;}
+
+/* 卡片标题右侧多个按钮 */
+.head-btns{display:flex; align-items:center; gap:4px; flex:none;}
+
+/* ---------- 底部导航 ---------- */
+.tabbar{
+  position:fixed; left:0; right:0; bottom:0; z-index:60;
+  display:flex; align-items:stretch;
+  background:color-mix(in srgb, var(--card) 92%, transparent);
+  backdrop-filter:saturate(180%) blur(16px);
+  -webkit-backdrop-filter:saturate(180%) blur(16px);
+  border-top:1px solid var(--line);
+  padding-bottom:var(--safe-b);
+  box-shadow:0 -6px 22px -14px rgba(122,96,66,.35);
+}
+.tab{
+  flex:1; display:flex; flex-direction:column; align-items:center; gap:2px;
+  padding:9px 0 8px; font-size:10.5px; color:var(--text-3); font-weight:700;
+  transition:color .2s, transform .14s;
+}
+.tab i{font-size:20px; font-style:normal; line-height:1; transition:transform .2s;}
+.tab.is-active{color:var(--brand-d);}
+html[data-theme="dark"] .tab.is-active{color:var(--brand);}
+.tab.is-active i{transform:translateY(-2px) scale(1.08);}
+.tab:active{transform:scale(.94);}
+
+/* ---------- 弹层 sheet ---------- */
+.sheet{position:fixed; inset:0; z-index:100; display:flex; align-items:flex-end; justify-content:center;}
+.sheet-bg{position:absolute; inset:0; background:rgba(30,20,10,.45); backdrop-filter:blur(3px); animation:fade .25s;}
+@keyframes fade{from{opacity:0} to{opacity:1}}
+.sheet-panel{
+  position:relative; width:100%; max-width:760px; max-height:92vh; overflow-y:auto;
+  background:var(--bg); border-radius:24px 24px 0 0; box-shadow:var(--shadow-lg);
+  animation:slideUp .34s cubic-bezier(.2,.9,.3,1);
+  -webkit-overflow-scrolling:touch;
+}
+@media(min-width:760px){
+  .sheet{align-items:center;}
+  .sheet-panel{border-radius:24px; max-height:88vh;}
+}
+@keyframes slideUp{from{transform:translateY(40px); opacity:.6;} to{transform:none; opacity:1;}}
+.sheet-center{display:flex; flex-direction:column; align-items:center; padding:24px;}
+
+/* 详情页内容 */
+.d-hero{
+  position:relative; padding:20px 18px 16px;
+  background:linear-gradient(135deg,#FFF0DC,#FFE0C8 60%,#FFD9E2);
+  border-radius:24px 24px 0 0;
+}
+html[data-theme="dark"] .d-hero{background:linear-gradient(135deg,#3A2A1E,#3A2430);}
+.d-close{
+  position:absolute; top:12px; right:12px; width:34px; height:34px; border-radius:11px;
+  background:rgba(255,255,255,.75); display:grid; place-items:center; font-size:16px; color:#5A4632;
+}
+html[data-theme="dark"] .d-close{background:rgba(0,0,0,.35); color:#F0E9E3;}
+.d-emoji{font-size:40px; line-height:1;}
+.d-title{font-size:23px; margin:8px 0 6px; letter-spacing:.4px;}
+.d-metas{display:flex; flex-wrap:wrap; gap:7px;}
+.d-meta{
+  font-size:12px; font-weight:700; background:rgba(255,255,255,.72); color:#7A5A38;
+  border-radius:9px; padding:4px 10px;
+}
+html[data-theme="dark"] .d-meta{background:rgba(0,0,0,.28); color:var(--text-2);}
+.d-body{padding:16px;}
+.d-sec{margin-bottom:18px;}
+.d-sec h3{
+  font-size:14px; letter-spacing:.6px; color:var(--text-2); margin-bottom:9px;
+  display:flex; align-items:center; gap:7px;
+}
+.d-sec h3::before{content:''; width:3px; height:13px; border-radius:3px; background:var(--brand);}
+.d-nutri{display:grid; grid-template-columns:repeat(4,1fr); gap:8px;}
+.d-nutri .n{background:var(--card); border:1px solid var(--line); border-radius:13px; padding:10px 6px; text-align:center;}
+.d-nutri .n b{display:block; font-size:16px; color:var(--brand-d);}
+html[data-theme="dark"] .d-nutri .n b{color:var(--brand);}
+.d-nutri .n small{font-size:10.5px; color:var(--text-3);}
+
+.d-list{list-style:none;}
+.d-list li{
+  background:var(--card); border:1px solid var(--line); border-radius:12px;
+  padding:9px 12px; margin-bottom:7px; font-size:14px;
+  display:flex; align-items:center; gap:8px;
+}
+.d-list li .em{font-size:17px;}
+.d-list li .amt{margin-left:auto; font-size:12px; color:var(--text-3);}
+
+.d-steps{list-style:none; counter-reset:s;}
+.d-steps li{
+  counter-increment:s; position:relative; padding:0 0 14px 34px; font-size:14px; line-height:1.75;
+  border-left:2px dashed var(--line-2); margin-left:12px;
+}
+.d-steps li:last-child{border-left-color:transparent; padding-bottom:0;}
+.d-steps li::before{
+  content:counter(s); position:absolute; left:-13px; top:0; width:24px; height:24px; border-radius:50%;
+  background:var(--brand); color:#fff; font-size:12px; font-weight:800; display:grid; place-items:center;
+}
+
+.d-note{
+  background:var(--card); border:1px solid var(--line); border-left:3px solid var(--brand);
+  border-radius:12px; padding:11px 13px; font-size:13.5px; line-height:1.75; color:var(--text-2);
+}
+.d-note.warn{border-left-color:var(--red);}
+.d-note + .d-note{margin-top:8px;}
+.d-note b{color:var(--text);}
+
+.d-actions{
+  position:sticky; bottom:0; display:flex; gap:9px; padding:12px 16px calc(16px + var(--safe-b));
+  background:linear-gradient(transparent, var(--bg) 24%);
+}
+.d-actions button{flex:1;}
+.d-actions .icon-btn{flex:none; width:44px; height:44px;}
+
+/* ---------- 转盘 ---------- */
+.wheel-wrap{position:relative; width:270px; height:270px; margin:8px 0 16px;}
+.wheel-wrap canvas{border-radius:50%; box-shadow:var(--shadow-lg);}
+.wheel-pin{
+  position:absolute; top:-6px; left:50%; transform:translateX(-50%);
+  font-size:26px; filter:drop-shadow(0 3px 5px rgba(0,0,0,.3)); z-index:2;
+}
+.wheel-result{font-size:17px; font-weight:800; text-align:center; margin-bottom:12px; min-height:26px;}
+.wheel-btns{display:flex; gap:9px; flex-wrap:wrap; justify-content:center;}
+
+/* ---------- 选择计划弹层 ---------- */
+.pick-day{
+  display:flex; align-items:center; gap:10px; padding:12px; border-radius:13px;
+  background:var(--card); border:1px solid var(--line); margin-bottom:9px; cursor:pointer;
+  transition:transform .14s, border-color .2s;
+}
+.pick-day:active{transform:scale(.98);}
+.pick-day .em{font-size:21px;}
+.pick-day .pd-info{flex:1; text-align:left;}
+.pick-day .pd-info b{display:block; font-size:14.5px;}
+.pick-day .pd-info small{font-size:11.5px; color:var(--text-3);}
+.pick-day .arrow{color:var(--text-3); font-size:16px;}
+.pick-head{display:flex; align-items:center; gap:9px; width:100%; padding:4px 4px 14px; justify-content:space-between;}
+.pick-head h3{font-size:17px;}
+.pick-sub{font-size:12.5px; color:var(--text-3); padding:0 4px 10px;}
+.serving-row{display:flex; align-items:center; justify-content:space-between; padding:12px 4px; font-size:14px; font-weight:600;}
+
+/* ---------- Toast ---------- */
+.toast{
+  position:fixed; left:50%; bottom:calc(100px + var(--safe-b)); transform:translateX(-50%);
+  background:var(--text); color:var(--bg); padding:11px 20px; border-radius:14px;
+  font-size:13.5px; font-weight:700; z-index:200; box-shadow:var(--shadow-lg);
+  animation:toastIn .28s ease; max-width:86vw; text-align:center;
+}
+@keyframes toastIn{from{opacity:0; transform:translate(-50%,14px);} to{opacity:1; transform:translate(-50%,0);}}
+
+/* ---------- FAB ---------- */
+.fab{
+  position:fixed; right:16px; bottom:calc(78px + var(--safe-b)); z-index:55;
+  background:var(--brand); color:#fff; font-size:14px; font-weight:800;
+  padding:12px 18px; border-radius:16px; box-shadow:0 10px 26px -10px var(--brand-d);
+  animation:slideUp .3s;
+}
+
+/* ---------- 打印 ---------- */
+@media print{
+  .topbar,.tabbar,.d-actions,.fab,.sheet-bg,.toast{display:none !important;}
+  body{background:#fff; padding:0; color:#000;}
+  .sheet{position:static; display:block;}
+  .sheet-panel{max-height:none; box-shadow:none; border-radius:0; background:#fff;}
+  .d-hero{background:#fff !important; color:#000;}
+  .d-meta{background:#eee !important; color:#333 !important;}
+  .d-close{display:none;}
+  .card,.d-list li,.d-note{border-color:#ccc; box-shadow:none;}
+}
+
+/* ---------- 滚动条（桌面） ---------- */
+@media(hover:hover){
+  ::-webkit-scrollbar{width:10px; height:10px;}
+  ::-webkit-scrollbar-thumb{background:var(--line-2); border-radius:10px; border:3px solid var(--bg);}
+  ::-webkit-scrollbar-track{background:transparent;}
+  .chip:hover,.icon-btn:hover,.btn-outline:hover{background:var(--bg-2);}
+  .rcard:hover,.rec-item:hover{transform:translateY(-2px); box-shadow:var(--shadow-lg);}
+}
+
+</style>
 </head>
 <body>
 
@@ -326,7 +1104,2610 @@
 <!-- ========== 底部浮动：快捷添加 ========== -->
 <button class="fab" id="fab" hidden>＋ 加入计划</button>
 
-<script src="assets/js/data.js"></script>
-<script src="assets/js/app.js"></script>
+<script>
+/* ===== 数据（原 assets/js/data.js） ===== */
+/* ==========================================================
+   今天吃什么 · 菜谱库
+   食材 9 大类（按用户提供的食材图整理）+ 汤品 / 粥品 / 菜品 / 主食
+   ========================================================== */
+
+/* ---------- 食材主数据 ----------
+   cat 用于分组显示：veg 蔬菜 / protein 肉蛋豆 / staple 主食
+   group 用于购物清单分组；kind 用于食材页细分小类
+--------------------------------------------------------------- */
+const INGREDIENTS = [
+  /* ===== 叶菜类 ===== */
+  { id: 'spinach',    name: '菠菜',    emoji: '🥬', group: '蔬菜', cat: 'veg', kind: '叶菜' },
+  { id: 'bokchoy',    name: '小白菜',  emoji: '🥬', group: '蔬菜', cat: 'veg', kind: '叶菜' },
+  { id: 'napa',       name: '大白菜',  emoji: '🥬', group: '蔬菜', cat: 'veg', kind: '叶菜' },
+  { id: 'youdou',     name: '油麦菜',  emoji: '🥬', group: '蔬菜', cat: 'veg', kind: '叶菜' },
+  { id: 'lettuce',    name: '生菜',    emoji: '🥬', group: '蔬菜', cat: 'veg', kind: '叶菜' },
+  { id: 'crown',      name: '茼蒿',    emoji: '🌿', group: '蔬菜', cat: 'veg', kind: '叶菜' },
+  { id: 'celery',     name: '芹菜',    emoji: '🥬', group: '蔬菜', cat: 'veg', kind: '叶菜' },
+  { id: 'chive',      name: '韭菜',    emoji: '🌿', group: '蔬菜', cat: 'veg', kind: '叶菜' },
+  { id: 'cilantro',   name: '香菜',    emoji: '🌿', group: '蔬菜', cat: 'veg', kind: '叶菜' },
+  { id: 'kangkong',   name: '空心菜',  emoji: '🥬', group: '蔬菜', cat: 'veg', kind: '叶菜' },
+  { id: 'cabbage',    name: '卷心菜',  emoji: '🥬', group: '蔬菜', cat: 'veg', kind: '叶菜' },
+  { id: 'purplecab',  name: '紫甘蓝',  emoji: '🥬', group: '蔬菜', cat: 'veg', kind: '叶菜' },
+  { id: 'broccoli',   name: '西兰花',  emoji: '🥦', group: '蔬菜', cat: 'veg', kind: '叶菜' },
+
+  /* ===== 根茎类 ===== */
+  { id: 'radish',     name: '白萝卜',  emoji: '🥕', group: '蔬菜', cat: 'veg', kind: '根茎' },
+  { id: 'carrot',     name: '胡萝卜',  emoji: '🥕', group: '蔬菜', cat: 'veg', kind: '根茎' },
+  { id: 'potato',     name: '土豆',    emoji: '🥔', group: '蔬菜', cat: 'veg', kind: '根茎' },
+  { id: 'sweetpotato',name: '红薯',    emoji: '🍠', group: '蔬菜', cat: 'veg', kind: '根茎' },
+  { id: 'yam',        name: '山药',    emoji: '🍠', group: '蔬菜', cat: 'veg', kind: '根茎' },
+  { id: 'taro',       name: '芋头',    emoji: '🥔', group: '蔬菜', cat: 'veg', kind: '根茎' },
+  { id: 'lotus',      name: '莲藕',    emoji: '🪷', group: '蔬菜', cat: 'veg', kind: '根茎' },
+  { id: 'bamboo',     name: '竹笋',    emoji: '🎋', group: '蔬菜', cat: 'veg', kind: '根茎' },
+  { id: 'konjac',     name: '魔芋',    emoji: '🟤', group: '蔬菜', cat: 'veg', kind: '根茎' },
+
+  /* ===== 瓜果茄类 ===== */
+  { id: 'eggplant',   name: '茄子',    emoji: '🍆', group: '蔬菜', cat: 'veg', kind: '瓜果' },
+  { id: 'tomato',     name: '番茄',    emoji: '🍅', group: '蔬菜', cat: 'veg', kind: '瓜果' },
+  { id: 'cucumber',   name: '黄瓜',    emoji: '🥒', group: '蔬菜', cat: 'veg', kind: '瓜果' },
+  { id: 'wintermelon',name: '冬瓜',    emoji: '🍈', group: '蔬菜', cat: 'veg', kind: '瓜果' },
+  { id: 'pumpkin',    name: '南瓜',    emoji: '🎃', group: '蔬菜', cat: 'veg', kind: '瓜果' },
+  { id: 'bittergourd',name: '苦瓜',    emoji: '🥒', group: '蔬菜', cat: 'veg', kind: '瓜果' },
+  { id: 'loofah',     name: '丝瓜',    emoji: '🥒', group: '蔬菜', cat: 'veg', kind: '瓜果' },
+  { id: 'zucchini',   name: '西葫芦',  emoji: '🥒', group: '蔬菜', cat: 'veg', kind: '瓜果' },
+  { id: 'greenpepper',name: '青椒',    emoji: '🫑', group: '蔬菜', cat: 'veg', kind: '瓜果' },
+  { id: 'chilipepper',name: '辣椒',    emoji: '🌶️', group: '蔬菜', cat: 'veg', kind: '瓜果' },
+
+  /* ===== 香辛料 ===== */
+  { id: 'onion',      name: '洋葱',    emoji: '🧅', group: '蔬菜', cat: 'veg', kind: '香辛' },
+  { id: 'garlic',     name: '大蒜',    emoji: '🧄', group: '蔬菜', cat: 'veg', kind: '香辛' },
+  { id: 'ginger',     name: '生姜',    emoji: '🫚', group: '蔬菜', cat: 'veg', kind: '香辛' },
+  { id: 'leek',       name: '大葱',    emoji: '🌿', group: '蔬菜', cat: 'veg', kind: '香辛' },
+  { id: 'scallion',   name: '小葱',    emoji: '🌿', group: '蔬菜', cat: 'veg', kind: '香辛' },
+
+  /* ===== 豆类与豆制品 ===== */
+  { id: 'soybean',    name: '黄豆',    emoji: '🫘', group: '蔬菜', cat: 'veg', kind: '豆类' },
+  { id: 'blackbean',  name: '黑豆',    emoji: '🫘', group: '蔬菜', cat: 'veg', kind: '豆类' },
+  { id: 'mungbean',   name: '绿豆',    emoji: '🫘', group: '蔬菜', cat: 'veg', kind: '豆类' },
+  { id: 'redbean',    name: '红豆',    emoji: '🫘', group: '蔬菜', cat: 'veg', kind: '豆类' },
+  { id: 'pea',        name: '豌豆',    emoji: '🫛', group: '蔬菜', cat: 'veg', kind: '豆类' },
+  { id: 'broadbean',  name: '蚕豆',    emoji: '🫛', group: '蔬菜', cat: 'veg', kind: '豆类' },
+  { id: 'cowpea',     name: '豇豆',    emoji: '🫛', group: '蔬菜', cat: 'veg', kind: '豆类' },
+  { id: 'edamame',    name: '毛豆',    emoji: '🫛', group: '蔬菜', cat: 'veg', kind: '豆类' },
+  { id: 'tofu',       name: '豆腐',    emoji: '⬜', group: '肉蛋', cat: 'protein', kind: '豆制品' },
+  { id: 'tofudry',    name: '豆干',    emoji: '🟫', group: '肉蛋', cat: 'protein', kind: '豆制品' },
+  { id: 'fuzhu',      name: '腐竹',    emoji: '🥢', group: '肉蛋', cat: 'protein', kind: '豆制品' },
+  { id: 'beansprout', name: '豆芽',    emoji: '🌱', group: '蔬菜', cat: 'veg', kind: '豆制品' },
+  { id: 'soymilk',    name: '豆浆',    emoji: '🥛', group: '主食', cat: 'staple', kind: '豆制品' },
+
+  /* ===== 菌菇类 ===== */
+  { id: 'mushroom',   name: '香菇',    emoji: '🍄', group: '蔬菜', cat: 'veg', kind: '菌菇' },
+  { id: 'enoki',      name: '金针菇',  emoji: '🍄', group: '蔬菜', cat: 'veg', kind: '菌菇' },
+  { id: 'kingoyster', name: '杏鲍菇',  emoji: '🍄', group: '蔬菜', cat: 'veg', kind: '菌菇' },
+  { id: 'woodear',    name: '木耳',    emoji: '🌑', group: '蔬菜', cat: 'veg', kind: '根茎' },
+  { id: 'silvereer',  name: '银耳',    emoji: '🤍', group: '蔬菜', cat: 'veg', kind: '根茎' },
+
+  /* ===== 谷物薯类 ===== */
+  { id: 'rice',       name: '大米',    emoji: '🍚', group: '主食', cat: 'staple', kind: '谷物' },
+  { id: 'glutinous',  name: '糯米',    emoji: '🍙', group: '主食', cat: 'staple', kind: '谷物' },
+  { id: 'millet',     name: '小米',    emoji: '🌾', group: '主食', cat: 'staple', kind: '谷物' },
+  { id: 'corn',       name: '玉米',    emoji: '🌽', group: '主食', cat: 'staple', kind: '谷物' },
+  { id: 'wheat',      name: '小麦',    emoji: '🌾', group: '主食', cat: 'staple', kind: '谷物' },
+  { id: 'oat',        name: '燕麦',    emoji: '🌾', group: '主食', cat: 'staple', kind: '谷物' },
+  { id: 'buckwheat',  name: '荞麦',    emoji: '🌾', group: '主食', cat: 'staple', kind: '谷物' },
+  { id: 'barley',     name: '薏米',    emoji: '🌾', group: '主食', cat: 'staple', kind: '谷物' },
+  { id: 'sorghum',    name: '高粱',    emoji: '🌾', group: '主食', cat: 'staple', kind: '谷物' },
+  { id: 'quinoa',     name: '藜麦',    emoji: '🌾', group: '主食', cat: 'staple', kind: '谷物' },
+
+  /* ===== 坚果种子 ===== */
+  { id: 'walnut',     name: '核桃',    emoji: '🌰', group: '坚果', cat: 'staple', kind: '坚果' },
+  { id: 'almond',     name: '杏仁',    emoji: '🌰', group: '坚果', cat: 'staple', kind: '坚果' },
+  { id: 'peanut',     name: '花生',    emoji: '🥜', group: '坚果', cat: 'staple', kind: '坚果' },
+  { id: 'cashew',     name: '腰果',    emoji: '🥜', group: '坚果', cat: 'staple', kind: '坚果' },
+  { id: 'pistachio',  name: '开心果',  emoji: '🥜', group: '坚果', cat: 'staple', kind: '坚果' },
+  { id: 'pinenut',    name: '松子',    emoji: '🌰', group: '坚果', cat: 'staple', kind: '坚果' },
+  { id: 'sunflower',  name: '葵花籽',  emoji: '🌻', group: '坚果', cat: 'staple', kind: '坚果' },
+  { id: 'pumpkinseed',name: '南瓜子',  emoji: '🎃', group: '坚果', cat: 'staple', kind: '坚果' },
+  { id: 'sesame',     name: '芝麻',    emoji: '⚫', group: '坚果', cat: 'staple', kind: '坚果' },
+  { id: 'chestnut',   name: '板栗',    emoji: '🌰', group: '坚果', cat: 'staple', kind: '坚果' },
+  { id: 'lotusseed',  name: '莲子',    emoji: '🪷', group: '坚果', cat: 'staple', kind: '坚果' },
+
+  /* ===== 藻类海菜 ===== */
+  { id: 'kelp',       name: '海带',    emoji: '🌿', group: '蔬菜', cat: 'veg', kind: '藻类' },
+  { id: 'noriseaweed',name: '紫菜',    emoji: '🟣', group: '蔬菜', cat: 'veg', kind: '藻类' },
+  { id: 'wakame',     name: '裙带菜',  emoji: '🌿', group: '蔬菜', cat: 'veg', kind: '藻类' },
+
+  /* ===== 肉蛋水产 ===== */
+  { id: 'egg',        name: '鸡蛋',    emoji: '🥚', group: '肉蛋', cat: 'protein', kind: '蛋' },
+  { id: 'beef',       name: '牛肉',    emoji: '🥩', group: '肉蛋', cat: 'protein', kind: '肉' },
+  { id: 'pork',       name: '猪肉',    emoji: '🥓', group: '肉蛋', cat: 'protein', kind: '肉' },
+  { id: 'porkribs',   name: '排骨',    emoji: '🍖', group: '肉蛋', cat: 'protein', kind: '肉' },
+  { id: 'porkbelly',  name: '五花肉',  emoji: '🥓', group: '肉蛋', cat: 'protein', kind: '肉' },
+  { id: 'chicken',    name: '鸡肉',    emoji: '🍗', group: '肉蛋', cat: 'protein', kind: '肉' },
+  { id: 'chickenwing',name: '鸡翅',    emoji: '🍗', group: '肉蛋', cat: 'protein', kind: '肉' },
+  { id: 'lamb',       name: '羊肉',    emoji: '🍖', group: '肉蛋', cat: 'protein', kind: '肉' },
+  { id: 'shrimp',     name: '虾仁',    emoji: '🦐', group: '肉蛋', cat: 'protein', kind: '水产' },
+  { id: 'fish',       name: '鱼',      emoji: '🐟', group: '肉蛋', cat: 'protein', kind: '水产' },
+
+  /* ===== 主食制品 ===== */
+  { id: 'noodle',     name: '面条',    emoji: '🍜', group: '主食', cat: 'staple', kind: '制品' },
+  { id: 'flour',      name: '面粉',    emoji: '🌾', group: '主食', cat: 'staple', kind: '制品' },
+  { id: 'bread',      name: '吐司',    emoji: '🍞', group: '主食', cat: 'staple', kind: '制品' },
+  { id: 'dumpling',   name: '饺子皮',  emoji: '🥟', group: '主食', cat: 'staple', kind: '制品' },
+  { id: 'ricecake',   name: '年糕',    emoji: '🍡', group: '主食', cat: 'staple', kind: '制品' },
+];
+
+const ING_MAP = Object.fromEntries(INGREDIENTS.map(i => [i.id, i]));
+
+/* ---------- 调味料：默认家里都有（不再提示"缺"） ---------- */
+const SEASONINGS = [
+  { id: 'oil',      name: '食用油',  emoji: '🫗' },
+  { id: 'salt',     name: '盐',      emoji: '🧂' },
+  { id: 'sugar',    name: '白糖',    emoji: '🍬' },
+  { id: 'rockcandy',name: '冰糖',    emoji: '🍬' },
+  { id: 'soysauce', name: '生抽',    emoji: '🥫' },
+  { id: 'darksoysauce', name: '老抽', emoji: '🥫' },
+  { id: 'vinegar',  name: '香醋',    emoji: '🥫' },
+  { id: 'cookingwine', name: '料酒', emoji: '🍶' },
+  { id: 'oystersauce', name: '蚝油', emoji: '🥫' },
+  { id: 'starch',   name: '淀粉',    emoji: '🥣' },
+  { id: 'peppercorn', name: '花椒',  emoji: '🌰' },
+  { id: 'staranise', name: '八角',   emoji: '⭐' },
+  { id: 'chili',    name: '干辣椒',  emoji: '🌶️' },
+  { id: 'chilipaste', name: '豆瓣酱', emoji: '🌶️' },
+  { id: 'sesameoil', name: '香油',   emoji: '🫗' },
+  { id: 'whitepowder', name: '白胡椒粉', emoji: '🧂' },
+  { id: 'fivepowder', name: '十三香', emoji: '🧂' },
+  { id: 'tomatopaste', name: '番茄酱', emoji: '🥫' },
+  { id: 'curry',    name: '咖喱块',  emoji: '🍛' },
+  { id: 'cumin',    name: '孜然',    emoji: '🌰' },
+  { id: 'cola',     name: '可乐',    emoji: '🥤' },
+  { id: 'goji',     name: '枸杞',    emoji: '🔴' },
+  { id: 'chickenpowder', name: '鸡精', emoji: '🧂' },
+  { id: 'sesameseeds', name: '熟白芝麻', emoji: '⚫' },
+];
+
+const SEASONING_MAP = Object.fromEntries(SEASONINGS.map(s => [s.id, s]));
+
+/* ==========================================================
+   菜谱
+   main: 主料   sub: 辅料   seas: 调料（默认有，不做"缺"提示）
+   category: dish 菜品 / soup 汤品 / porridge 粥品 / staple 主食
+   ========================================================== */
+const RECIPES = [
+  /* ------------------ 菜品 ------------------ */
+  {
+    id: 'r01', name: '番茄炒蛋', emoji: '🍅🥚', category: 'dish',
+    main: ['tomato', 'egg'], sub: ['scallion'], seas: ['oil', 'salt', 'sugar'],
+    steps: [
+      '番茄洗净切块（想去皮可划十字用开水烫 30 秒）；鸡蛋打散加一小撮盐搅匀。',
+      '热锅倒油，油温上来后倒入蛋液，等边缘凝固再翻炒成大块盛出备用。',
+      '锅里补少许油，下番茄中火炒 2 分钟，炒到出汁、边缘变软。',
+      '加盐和半勺糖提鲜，倒回鸡蛋翻炒均匀，撒葱花出锅。',
+    ],
+    kcal: 230, protein: 15, carb: 12, fat: 14,
+    minutes: 10, difficulty: '简单',
+    tags: ['家常', '快手', '下饭'], serves: 2, method: '炒', cuisine: '家常菜', taste: '咸鲜微甜',
+    tools: ['炒锅'], allergens: ['蛋'],
+    tips: '鸡蛋液里加一点点清水，炒出来更嫩；糖不是为了甜，是为了中和番茄的酸。',
+    substitutes: '番茄可以换成番茄罐头；鸡蛋可换成鹌鹑蛋（用量翻倍）。',
+    storage: '冷藏密封 1 天。再加热时用小火，避免鸡蛋变老。',
+    cost: 6, failpoints: '油温太低鸡蛋会粘锅、出水；番茄炒太久会变糊状，口感发酸。',
+  },
+  {
+    id: 'r02', name: '青椒土豆丝', emoji: '🫑🥔', category: 'dish',
+    main: ['potato', 'greenpepper'], sub: ['ginger', 'garlic'], seas: ['oil', 'salt', 'vinegar'],
+    steps: [
+      '土豆去皮切细丝，泡冷水 5 分钟洗掉表面淀粉，捞出沥干。',
+      '青椒去籽切丝，姜蒜切末。',
+      '热锅热油，爆香姜蒜，下土豆丝大火快炒 1 分钟。',
+      '下青椒丝继续大火炒 1 分钟，沿锅边淋少许醋，加盐炒匀出锅。',
+    ],
+    kcal: 160, protein: 4, carb: 28, fat: 4,
+    minutes: 12, difficulty: '简单',
+    tags: ['快手', '素食', '爽脆'], serves: 2, method: '炒', cuisine: '家常菜', taste: '咸鲜爽脆',
+    tools: ['炒锅'], allergens: [],
+    tips: '泡水洗淀粉是脆的关键；醋沿锅边淋，香气更足。',
+    substitutes: '青椒可换尖椒（更辣）；土豆换山药口感也类似。',
+    storage: '现做现吃最好，冷藏 1 天，再加热会变软。',
+    cost: 4, failpoints: '土豆丝不泡水会粘成一团；火小会炒成"土豆泥"。',
+  },
+  {
+    id: 'r03', name: '麻婆豆腐', emoji: '🌶️⬜', category: 'dish',
+    main: ['tofu', 'pork'], sub: ['scallion', 'garlic', 'ginger'], seas: ['chilipaste', 'peppercorn', 'oil', 'soysauce', 'starch', 'salt'],
+    steps: [
+      '豆腐切小方块，放淡盐水里泡 5 分钟（去豆腥、不易碎）；肉剁成末。',
+      '热锅倒油，炒散肉末至变色，加豆瓣酱炒出红油，下姜蒜末爆香。',
+      '倒入一小碗热水煮开，轻轻放入豆腐，中火煮 3 分钟。',
+      '加生抽调味，淋水淀粉勾芡（分两次），撒花椒粉和葱花出锅。',
+    ],
+    kcal: 320, protein: 22, carb: 10, fat: 22,
+    minutes: 20, difficulty: '中等',
+    tags: ['麻辣', '下饭', '川菜'], serves: 2, method: '烧', cuisine: '川菜', taste: '麻辣鲜香',
+    tools: ['炒锅'], allergens: ['大豆'],
+    tips: '豆腐用淡盐水泡过更结实；芡分两次勾，汤汁才能抱住豆腐。',
+    substitutes: '不能吃辣可减半豆瓣酱，用甜面酱替代；猪肉可换牛肉末。',
+    storage: '冷藏 2 天，再加热时加少许水防止糊底。',
+    cost: 9, failpoints: '豆腐直接下锅大火翻会碎；豆瓣酱炒糊会发苦。',
+  },
+  {
+    id: 'r04', name: '洋葱炒牛肉', emoji: '🧅🥩', category: 'dish',
+    main: ['beef', 'onion'], sub: ['ginger', 'garlic'], seas: ['oil', 'soysauce', 'oystersauce', 'starch', 'cookingwine', 'salt'],
+    steps: [
+      '牛肉逆纹切薄片，加料酒、生抽、淀粉抓匀，腌 15 分钟。',
+      '洋葱切粗丝，姜蒜切末。',
+      '热锅多油，牛肉下锅大火滑炒到变色立刻盛出（不要炒老）。',
+      '原锅下洋葱炒到透明微焦，倒回牛肉，加蚝油和盐，大火炒 30 秒出锅。',
+    ],
+    kcal: 380, protein: 30, carb: 12, fat: 24,
+    minutes: 25, difficulty: '中等',
+    tags: ['高蛋白', '下饭'], serves: 2, method: '炒', cuisine: '家常菜', taste: '咸香',
+    tools: ['炒锅'], allergens: ['大豆'],
+    tips: '牛肉逆着纹理切、加淀粉腌，是嫩的两大关键；洋葱炒到微焦最香。',
+    substitutes: '牛肉可换里脊肉；洋葱换彩椒颜色更好看。',
+    storage: '冷藏 1 天，再加热易变老，建议微波短时。',
+    cost: 28, failpoints: '牛肉炒久了会又硬又柴；火不够大会出水变成"煮牛肉"。',
+  },
+  {
+    id: 'r05', name: '蒜蓉炒青菜', emoji: '🥬🧄', category: 'dish',
+    main: ['bokchoy'], sub: ['garlic'], seas: ['oil', 'salt'],
+    steps: [
+      '小白菜洗净，梗和叶分开切段；蒜切片。',
+      '热锅热油，下蒜片爆香。',
+      '先下菜梗大火炒 1 分钟，再下菜叶炒 1 分钟。',
+      '加盐炒匀，看到菜叶变软立刻出锅。',
+    ],
+    kcal: 90, protein: 4, carb: 8, fat: 5,
+    minutes: 8, difficulty: '简单',
+    tags: ['素食', '低卡', '快手'], serves: 2, method: '炒', cuisine: '家常菜', taste: '清淡',
+    tools: ['炒锅'], allergens: [],
+    tips: '梗叶分开下锅，熟度才一致；全程大火，菜才不会出很多水。',
+    substitutes: '小白菜可换油麦菜、菠菜、空心菜、卷心菜。',
+    storage: '最好现做；冷藏 1 天，再热会发黄。',
+    cost: 3, failpoints: '盖锅盖焖会发黄出水；炒久会软塌没口感。',
+  },
+  {
+    id: 'r06', name: '鱼香茄子', emoji: '🍆🌶️', category: 'dish',
+    main: ['eggplant'], sub: ['pork', 'garlic', 'ginger', 'scallion'], seas: ['chilipaste', 'soysauce', 'vinegar', 'sugar', 'starch', 'oil', 'salt'],
+    steps: [
+      '茄子切滚刀块，撒少许盐腌 10 分钟挤干水分（省油关键）。',
+      '调鱼香汁：生抽 2 勺 + 醋 1.5 勺 + 糖 1 勺 + 淀粉半勺 + 水 3 勺搅匀。',
+      '热锅多油，茄子煎到表面微焦盛出。',
+      '原锅炒肉末，下豆瓣酱、姜蒜末炒香，倒回茄子，淋鱼香汁翻匀收汁，撒葱花。',
+    ],
+    kcal: 280, protein: 9, carb: 22, fat: 18,
+    minutes: 25, difficulty: '中等',
+    tags: ['鱼香', '下饭', '川菜'], serves: 2, method: '炒', cuisine: '川菜', taste: '酸甜微辣',
+    tools: ['炒锅'], allergens: ['大豆'],
+    tips: '茄子先盐腌挤水，就不那么"吃油"了；鱼香汁提前调好，下锅才不慌。',
+    substitutes: '茄子可换杏鲍菇；不喜辣可减豆瓣酱。',
+    storage: '冷藏 2 天，风味更浓。',
+    cost: 8, failpoints: '茄子不腌会吸掉半锅油；汁没调匀下锅会结块。',
+  },
+  {
+    id: 'r07', name: '白灼虾仁', emoji: '🦐🍋', category: 'dish',
+    main: ['shrimp'], sub: ['ginger', 'scallion'], seas: ['salt', 'cookingwine', 'soysauce', 'sesameoil'],
+    steps: [
+      '虾仁去虾线洗净，加少许盐和料酒抓匀腌 5 分钟。',
+      '锅里水烧开，放姜片和葱段。',
+      '下虾仁烫 1 分钟，变红卷曲立刻捞出（别煮久）。',
+      '调蘸汁：生抽 + 香油 + 姜末，蘸着吃。',
+    ],
+    kcal: 130, protein: 24, carb: 2, fat: 3,
+    minutes: 10, difficulty: '简单',
+    tags: ['高蛋白', '低卡', '减脂'], serves: 2, method: '灼', cuisine: '粤菜', taste: '鲜甜',
+    tools: ['汤锅'], allergens: ['甲壳类'],
+    tips: '虾仁一看变红卷曲就捞，多煮 30 秒就变硬。',
+    substitutes: '虾仁可换鲜虾（去壳去线）；换成鱿鱼圈时间加 1 分钟。',
+    storage: '冷藏 1 天，冷吃也 OK（凉拌）。',
+    cost: 26, failpoints: '水不沸就下锅会煮老；煮过头口感像橡皮。',
+  },
+  {
+    id: 'r08', name: '可乐鸡翅', emoji: '🍗🥤', category: 'dish',
+    main: ['chickenwing'], sub: ['ginger', 'scallion'], seas: ['cola', 'soysauce', 'cookingwine', 'oil', 'salt'],
+    steps: [
+      '鸡翅两面各划两刀，冷水下锅加姜片料酒焯 3 分钟，捞出冲净沥干。',
+      '热锅少油，鸡翅下锅两面煎到微金黄。',
+      '倒入可乐没过鸡翅，加生抽、姜片，大火烧开转中小火焖 15 分钟。',
+      '开盖大火收汁，汤汁变浓稠裹住鸡翅即可，撒葱花。',
+    ],
+    kcal: 340, protein: 26, carb: 22, fat: 16,
+    minutes: 35, difficulty: '中等',
+    tags: ['甜口', '颜值', '下饭'], serves: 2, method: '焖', cuisine: '家常菜', taste: '甜咸',
+    tools: ['炒锅'], allergens: ['大豆'],
+    tips: '焯水后再煎，去腥且皮更香；收汁时要盯着，糖分容易糊。',
+    substitutes: '鸡翅可换鸡腿块；可乐可换雪碧（更甜，少放糖）。',
+    storage: '冷藏 2 天，再加热加少许水。',
+    cost: 18, failpoints: '收汁火太大会发苦发黑；可乐太多会太甜。',
+  },
+  {
+    id: 'r09', name: '香菇滑鸡', emoji: '🍄🍗', category: 'dish',
+    main: ['chicken', 'mushroom'], sub: ['ginger', 'scallion'], seas: ['soysauce', 'oystersauce', 'starch', 'cookingwine', 'oil', 'salt'],
+    steps: [
+      '鸡肉切块，加料酒、生抽、淀粉、少许油抓匀腌 20 分钟。',
+      '香菇去蒂切片；姜切丝。',
+      '热锅热油，下鸡块大火炒到表面变白。',
+      '加香菇、姜丝翻炒，加半碗水焖 5 分钟，加蚝油和盐收汁，撒葱花。',
+    ],
+    kcal: 290, protein: 28, carb: 8, fat: 16,
+    minutes: 30, difficulty: '中等',
+    tags: ['高蛋白', '鲜香'], serves: 2, method: '焖', cuisine: '家常菜', taste: '咸鲜',
+    tools: ['炒锅'], allergens: ['大豆'],
+    tips: '鸡肉提前用淀粉+油腌，滑炒时不容易老。',
+    substitutes: '香菇可换口蘑、杏鲍菇；鸡肉换鸡腿肉更嫩。',
+    storage: '冷藏 2 天。',
+    cost: 20, failpoints: '鸡肉炒太久会柴；香菇没炒香会寡淡。',
+  },
+  {
+    id: 'r13', name: '干煸青椒', emoji: '🫑🌶️', category: 'dish',
+    main: ['greenpepper', 'pork'], sub: ['garlic', 'ginger'], seas: ['chilipaste', 'peppercorn', 'oil', 'salt', 'soysauce'],
+    steps: [
+      '青椒切段，猪肉剁末。',
+      '锅里放油，中小火把青椒煸到表面起皱、变软，盛出。（注意别糊）',
+      '原锅炒肉末，加豆瓣酱、花椒、姜蒜末炒香。',
+      '倒回青椒，加盐、生抽，大火炒 1 分钟出锅。',
+    ],
+    kcal: 260, protein: 12, carb: 14, fat: 18,
+    minutes: 22, difficulty: '中等',
+    tags: ['麻辣', '下饭'], serves: 2, method: '炒', cuisine: '川菜', taste: '麻辣咸香',
+    tools: ['炒锅'], allergens: ['大豆'],
+    tips: '煸青椒要中小火有耐心，煸出"虎皮"才香。',
+    substitutes: '青椒可换四季豆（一定要煸熟透）；肉末可省，做成素版。',
+    storage: '冷藏 1 天。',
+    cost: 8, failpoints: '四季豆没熟透有轻微毒性风险，务必煸到软塌。',
+  },
+  {
+    id: 'r15', name: '凉拌黄瓜', emoji: '🥒🧄', category: 'dish',
+    main: ['cucumber'], sub: ['garlic'], seas: ['vinegar', 'soysauce', 'sesameoil', 'sugar', 'salt', 'chilipaste'],
+    steps: [
+      '黄瓜洗净拍碎切段（拍过的更入味），撒盐腌 5 分钟倒掉水。',
+      '调汁：蒜末 + 醋 + 生抽 + 糖 + 香油 + 少许辣椒油搅匀。',
+      '把汁浇在黄瓜上拌匀。',
+      '冰箱冷藏 10 分钟更爽口。',
+    ],
+    kcal: 70, protein: 2, carb: 8, fat: 4,
+    minutes: 8, difficulty: '简单',
+    tags: ['凉菜', '低卡', '解腻', '夏日'], serves: 2, method: '拌', cuisine: '家常菜', taste: '酸咸爽口',
+    tools: ['无（凉拌）'], allergens: ['大豆'],
+    tips: '加蒜末和少许糖，味道更立体；拍比切更入味。',
+    substitutes: '黄瓜可换木耳（提前泡发焯水）、腐竹、海带丝。',
+    storage: '冷藏 1 天，出水后倒掉多余汁水。',
+    cost: 3, failpoints: '不腌直接拌会出很多水，味道淡。',
+  },
+  {
+    id: 'r16', name: '红烧肉', emoji: '🥓🍬', category: 'dish',
+    main: ['porkbelly'], sub: ['ginger', 'scallion'], seas: ['rockcandy', 'soysauce', 'darksoysauce', 'cookingwine', 'oil', 'salt'],
+    steps: [
+      '五花肉切 2cm 方块，冷水下锅加姜葱料酒焯 5 分钟，捞出沥干。',
+      '锅里少油，放冰糖小火炒到融化变琥珀色（炒糖色）。',
+      '倒入肉块翻炒上色，加生抽、老抽、料酒、姜片。',
+      '加热水没过肉，大火烧开转小火焖 40 分钟。',
+      '大火收汁，汤汁浓稠裹肉即可。',
+    ],
+    kcal: 560, protein: 24, carb: 18, fat: 46,
+    minutes: 70, difficulty: '困难',
+    tags: ['硬菜', '宴客', '经典'], serves: 3, method: '焖', cuisine: '本帮菜', taste: '咸甜浓郁',
+    tools: ['炒锅', '炖锅'], allergens: ['大豆'],
+    tips: '炒糖色是关键：小火、不断搅、变琥珀色立刻下肉，糊了整锅苦。',
+    substitutes: '五花肉可换前腿肉（瘦一些）。',
+    storage: '冷藏 3 天，冷冻 1 个月。',
+    cost: 32, failpoints: '糖色炒糊发苦；加冷水肉会变硬。',
+  },
+  {
+    id: 'r20', name: '香煎鸡胸沙拉', emoji: '🥗🍗', category: 'dish',
+    main: ['chicken', 'cucumber', 'lettuce'], sub: ['onion', 'tomato'], seas: ['oil', 'salt', 'whitepowder', 'vinegar', 'soysauce'],
+    steps: [
+      '鸡胸横切成两片，用盐、白胡椒、少许生抽腌 15 分钟。',
+      '生菜撕块，黄瓜番茄切块，洋葱切圈。',
+      '平底锅少油中火，鸡胸每面煎 3—4 分钟至微焦，静置 3 分钟再切条。',
+      '蔬菜 + 鸡胸摆盘，淋橄榄油/醋汁，撒黑胡椒。',
+    ],
+    kcal: 320, protein: 38, carb: 12, fat: 12,
+    minutes: 25, difficulty: '简单',
+    tags: ['减脂', '高蛋白', '轻食'], serves: 1, method: '煎', cuisine: '西式', taste: '清爽',
+    tools: ['平底锅'], allergens: ['大豆'],
+    tips: '煎完静置 3 分钟再切，肉汁不流失，更嫩。',
+    substitutes: '鸡胸可换鸡腿肉、虾仁、牛里脊；生菜可换苦菊、紫甘蓝。',
+    storage: '鸡胸冷藏 1 天（生菜当天吃）。',
+    cost: 16, failpoints: '煎太久会柴；不腌制会没味道。',
+  },
+  {
+    id: 'r21', name: '木耳炒鸡蛋', emoji: '🌑🥚', category: 'dish',
+    main: ['woodear', 'egg'], sub: ['scallion', 'garlic'], seas: ['oil', 'salt', 'soysauce'],
+    steps: [
+      '木耳提前泡发（温水 30 分钟），撕小朵；鸡蛋打散。',
+      '热锅热油，炒鸡蛋成块盛出。',
+      '锅里补油，爆香蒜末，下木耳大火炒 2 分钟。',
+      '倒回鸡蛋，加盐、少许生抽，撒葱花出锅。',
+    ],
+    kcal: 180, protein: 14, carb: 10, fat: 10,
+    minutes: 12, difficulty: '简单',
+    tags: ['快手', '补铁', '家常'], serves: 2, method: '炒', cuisine: '家常菜', taste: '咸鲜',
+    tools: ['炒锅'], allergens: ['蛋', '大豆'],
+    tips: '木耳一定要泡发透；下锅前充分沥干，不然会炸油。',
+    substitutes: '木耳可换银耳（口感更脆）；鸡蛋可换豆腐。',
+    storage: '冷藏 1 天。',
+    cost: 6, failpoints: '泡发时间不够会硬；木耳带水下锅会溅油。',
+  },
+  {
+    id: 'r22', name: '干锅西兰花', emoji: '🥦🥓', category: 'dish',
+    main: ['broccoli', 'porkbelly'], sub: ['garlic', 'ginger', 'chilipepper'], seas: ['chilipaste', 'soysauce', 'oil', 'salt', 'sugar'],
+    steps: [
+      '西兰花掰小朵，盐水泡 10 分钟洗净沥干；五花肉切薄片。',
+      '热锅少油，五花肉煸出油至微焦。',
+      '下豆瓣酱、蒜片、姜丝、辣椒炒香。',
+      '倒入西兰花大火翻炒 3 分钟，加生抽、少许糖，炒到边缘微焦出锅。',
+    ],
+    kcal: 310, protein: 14, carb: 16, fat: 22,
+    minutes: 25, difficulty: '中等',
+    tags: ['下饭', '香辣', '川菜'], serves: 2, method: '炒', cuisine: '川菜', taste: '香辣',
+    tools: ['炒锅'], allergens: ['大豆'],
+    tips: '西兰花不要焯水，直接干炒才够香；五花肉煸出油是关键。',
+    substitutes: '西兰花可换花菜、芥蓝；五花肉可换腊肉。',
+    storage: '冷藏 2 天。',
+    cost: 14, failpoints: '西兰花没沥干会出水变成"煮西兰花"；火小炒不出焦香。',
+  },
+  {
+    id: 'r23', name: '清炒莲藕片', emoji: '🪷🥢', category: 'dish',
+    main: ['lotus'], sub: ['scallion', 'garlic'], seas: ['oil', 'salt', 'vinegar', 'sugar'],
+    steps: [
+      '莲藕去皮切薄片，泡水防止氧化变黑。',
+      '锅里烧水，藕片焯 1 分钟捞出。',
+      '热锅热油，爆香蒜末，下藕片大火炒 1 分钟。',
+      '加盐、少许糖、几滴醋炒匀，撒葱花出锅。',
+    ],
+    kcal: 120, protein: 3, carb: 22, fat: 3,
+    minutes: 12, difficulty: '简单',
+    tags: ['爽脆', '清淡', '素食'], serves: 2, method: '炒', cuisine: '家常菜', taste: '清甜爽脆',
+    tools: ['炒锅'], allergens: [],
+    tips: '切好立刻泡水，藕才不会发黑；加几滴醋更脆。',
+    substitutes: '莲藕可换竹笋、马蹄。',
+    storage: '冷藏 1 天。',
+    cost: 8, failpoints: '不泡水会变黑；炒久会不脆。',
+  },
+  {
+    id: 'r24', name: '韭菜炒鸡蛋', emoji: '🌿🥚', category: 'dish',
+    main: ['chive', 'egg'], sub: [], seas: ['oil', 'salt'],
+    steps: [
+      '韭菜洗净切段（梗叶分开），鸡蛋打散。',
+      '热锅热油，炒鸡蛋成块盛出。',
+      '锅里补少许油，先下韭菜梗炒 20 秒，再下叶。',
+      '倒回鸡蛋，加盐快速炒匀，10 秒出锅。',
+    ],
+    kcal: 200, protein: 14, carb: 8, fat: 13,
+    minutes: 8, difficulty: '简单',
+    tags: ['快手', '家常', '下饭'], serves: 2, method: '炒', cuisine: '家常菜', taste: '鲜香',
+    tools: ['炒锅'], allergens: ['蛋'],
+    tips: '韭菜下锅就熟，全程别超过 40 秒，否则会出水发黄。',
+    substitutes: '韭菜可换韭黄、豆芽。',
+    storage: '最好现做，隔夜韭菜味道变重。',
+    cost: 6, failpoints: '炒久了韭菜会发黄出水，口感变差。',
+  },
+  {
+    id: 'r25', name: '蒜蓉西兰花', emoji: '🥦🧄', category: 'dish',
+    main: ['broccoli'], sub: ['garlic'], seas: ['oil', 'salt', 'oystersauce'],
+    steps: [
+      '西兰花掰小朵，盐水泡 10 分钟，洗净。',
+      '烧一锅水，加几滴油和盐，西兰花焯 1 分钟捞出过凉水。',
+      '热锅热油，爆香蒜末。',
+      '下西兰花大火快炒 1 分钟，加盐、少许蚝油炒匀出锅。',
+    ],
+    kcal: 110, protein: 6, carb: 10, fat: 6,
+    minutes: 12, difficulty: '简单',
+    tags: ['健康', '低卡', '素食'], serves: 2, method: '炒', cuisine: '家常菜', taste: '清鲜',
+    tools: ['炒锅', '汤锅'], allergens: ['大豆'],
+    tips: '焯水时加盐和油，颜色更翠绿；焯完过凉水保持脆度。',
+    substitutes: '西兰花可换花椰菜、芥蓝。',
+    storage: '冷藏 1 天，颜色会变暗。',
+    cost: 8, failpoints: '焯水太久会变软发黄；不焯水直接炒容易夹生。',
+  },
+  {
+    id: 'r26', name: '酸辣土豆丝', emoji: '🥔🌶️', category: 'dish',
+    main: ['potato'], sub: ['garlic', 'chilipepper', 'scallion'], seas: ['oil', 'salt', 'vinegar', 'chilipaste'],
+    steps: [
+      '土豆切细丝，泡水 5 分钟去淀粉，沥干。',
+      '热锅热油，爆香蒜末和干辣椒段。',
+      '下土豆丝大火快炒 1.5 分钟。',
+      '沿锅边淋醋，加盐和少许豆瓣酱炒匀，撒葱花出锅。',
+    ],
+    kcal: 170, protein: 4, carb: 26, fat: 6,
+    minutes: 12, difficulty: '简单',
+    tags: ['酸辣', '下饭', '快手'], serves: 2, method: '炒', cuisine: '家常菜', taste: '酸辣爽脆',
+    tools: ['炒锅'], allergens: ['大豆'],
+    tips: '醋分两次放：炒时一次提香，出锅前一次提酸。',
+    substitutes: '土豆可换山药、藕片。',
+    storage: '冷藏 1 天，会变软。',
+    cost: 4, failpoints: '不泡水会粘锅；泡水后有水直接下锅会溅油、炒不脆。',
+  },
+  {
+    id: 'r27', name: '家常豆腐', emoji: '⬜🥕', category: 'dish',
+    main: ['tofu', 'carrot'], sub: ['woodear', 'scallion', 'garlic'], seas: ['oil', 'soysauce', 'oystersauce', 'starch', 'salt'],
+    steps: [
+      '豆腐切三角片，用厨房纸吸干水分。',
+      '平底锅少油，豆腐两面煎到金黄盛出。',
+      '锅里留底油，爆香蒜末，下胡萝卜片、木耳炒 1 分钟。',
+      '倒回豆腐，加生抽、蚝油和半碗水，焖 3 分钟，水淀粉勾薄芡，撒葱花。',
+    ],
+    kcal: 240, protein: 16, carb: 14, fat: 14,
+    minutes: 22, difficulty: '中等',
+    tags: ['家常', '下饭', '素食'], serves: 2, method: '烧', cuisine: '家常菜', taste: '咸鲜',
+    tools: ['平底锅', '炒锅'], allergens: ['大豆'],
+    tips: '豆腐吸干水分再煎，不粘锅也不溅油。',
+    substitutes: '豆腐可换豆干、千页豆腐。',
+    storage: '冷藏 2 天。',
+    cost: 8, failpoints: '豆腐没吸干水会溅油；翻动太勤会碎。',
+  },
+
+  /* ------------------ 汤品 ------------------ */
+  {
+    id: 's01', name: '番茄鸡蛋汤', emoji: '🍅🥚', category: 'soup',
+    main: ['tomato', 'egg'], sub: ['scallion'], seas: ['salt', 'oil', 'starch', 'sesameoil'],
+    steps: [
+      '番茄切小块，鸡蛋打散。',
+      '锅里少油，下番茄炒出汁。',
+      '加两碗水烧开，煮 3 分钟。',
+      '水淀粉勾薄芡（汤更浓），关小火，慢慢淋入蛋液划散。',
+      '加盐，滴几滴香油，撒葱花出锅。',
+    ],
+    kcal: 120, protein: 9, carb: 8, fat: 7,
+    minutes: 12, difficulty: '简单',
+    tags: ['汤', '快手', '开胃', '清淡'], serves: 2, method: '煮', cuisine: '家常菜', taste: '酸鲜',
+    tools: ['汤锅'], allergens: ['蛋'],
+    tips: '蛋液要在关小火后淋入并不要立刻搅，蛋花才漂亮成絮状。',
+    substitutes: '番茄可换冬瓜、丝瓜；鸡蛋可换豆腐。',
+    storage: '最好当天喝完。',
+    cost: 5, failpoints: '大火淋蛋液会把蛋冲成碎渣；不勾芡汤会很清。',
+  },
+  {
+    id: 's02', name: '冬瓜排骨汤', emoji: '🍈🍖', category: 'soup',
+    main: ['porkribs', 'wintermelon'], sub: ['ginger', 'scallion'], seas: ['salt', 'cookingwine'],
+    steps: [
+      '排骨冷水下锅，加姜片料酒焯水，撇沫捞出冲洗干净。',
+      '冬瓜去皮去瓤切块。',
+      '排骨 + 姜片 + 足量水，大火烧开转小火炖 40 分钟。',
+      '加冬瓜再炖 15 分钟至透明。',
+      '出锅前 5 分钟加盐，撒葱花。',
+    ],
+    kcal: 260, protein: 20, carb: 10, fat: 15,
+    minutes: 65, difficulty: '简单',
+    tags: ['汤', '清淡', '消暑', '养生'], serves: 3, method: '炖', cuisine: '家常菜', taste: '清甜',
+    tools: ['汤锅'], allergens: [],
+    tips: '盐一定最后放，早放肉会柴；冬瓜后放才不会煮化。',
+    substitutes: '冬瓜可换玉米、白萝卜；排骨可换脊骨、鸡腿。',
+    storage: '冷藏 2 天，冷冻 2 周。',
+    cost: 28, failpoints: '不焯水汤会浑有腥味；冬瓜煮太久会化掉。',
+  },
+  {
+    id: 's03', name: '紫菜蛋花汤', emoji: '🟣🥚', category: 'soup',
+    main: ['noriseaweed', 'egg'], sub: ['scallion'], seas: ['salt', 'sesameoil', 'chickenpowder'],
+    steps: [
+      '紫菜撕小块放碗里，鸡蛋打散。',
+      '锅里水烧开，转小火，缓缓淋入蛋液。',
+      '加盐和少许鸡精。',
+      '把汤冲进紫菜碗里，滴香油，撒葱花。',
+    ],
+    kcal: 80, protein: 8, carb: 4, fat: 4,
+    minutes: 6, difficulty: '简单',
+    tags: ['汤', '超快手', '低卡', '补碘'], serves: 1, method: '煮', cuisine: '家常菜', taste: '鲜',
+    tools: ['汤锅'], allergens: ['蛋'],
+    tips: '紫菜不用下锅煮，用热汤冲开就行，口感更好。',
+    substitutes: '紫菜可换裙带菜、海带；鸡蛋可换虾皮。',
+    storage: '当天喝完。',
+    cost: 3, failpoints: '紫菜煮久了会发腥发烂；蛋液大火冲会成渣。',
+  },
+  {
+    id: 's04', name: '玉米胡萝卜排骨汤', emoji: '🌽🥕', category: 'soup',
+    main: ['porkribs', 'corn', 'carrot'], sub: ['ginger'], seas: ['salt', 'cookingwine'],
+    steps: [
+      '排骨冷水下锅焯水，撇沫捞出洗净。',
+      '玉米切段，胡萝卜滚刀块，姜切片。',
+      '所有材料放锅里，加足量水，大火烧开转小火炖 50 分钟。',
+      '出锅前 5 分钟加盐调味。',
+    ],
+    kcal: 280, protein: 20, carb: 24, fat: 12,
+    minutes: 65, difficulty: '简单',
+    tags: ['汤', '清甜', '养生', '儿童友好'], serves: 3, method: '炖', cuisine: '家常菜', taste: '清甜',
+    tools: ['汤锅'], allergens: [],
+    tips: '盐一定最后放，早放肉会柴；想更甜可加两片山药。',
+    substitutes: '排骨可换鸡腿、脊骨；玉米可用玉米粒代替。',
+    storage: '冷藏 2 天，冷冻 2 周。',
+    cost: 26, failpoints: '不焯水汤会浑有腥味；中途加水影响味道。',
+  },
+  {
+    id: 's05', name: '山药排骨汤', emoji: '🍠🍖', category: 'soup',
+    main: ['porkribs', 'yam'], sub: ['ginger', 'goji'], seas: ['salt', 'cookingwine'],
+    steps: [
+      '排骨焯水洗净。山药去皮切段（戴手套防手痒）。',
+      '排骨 + 姜片 + 水，大火烧开转小火炖 40 分钟。',
+      '加山药继续炖 20 分钟至软糯。',
+      '加盐，撒枸杞，再煮 2 分钟出锅。',
+    ],
+    kcal: 300, protein: 21, carb: 20, fat: 14,
+    minutes: 70, difficulty: '简单',
+    tags: ['汤', '养胃', '滋补', '养生'], serves: 3, method: '炖', cuisine: '家常菜', taste: '清甜软糯',
+    tools: ['汤锅'], allergens: [],
+    tips: '处理山药戴手套，黏液会让手痒；枸杞最后放，煮久会酸。',
+    substitutes: '山药可换芋头、莲藕、红薯。',
+    storage: '冷藏 2 天。',
+    cost: 30, failpoints: '山药切好不泡水会发黑；煮太久会散。',
+  },
+  {
+    id: 's06', name: '海带豆腐汤', emoji: '🌿⬜', category: 'soup',
+    main: ['kelp', 'tofu'], sub: ['scallion', 'ginger'], seas: ['salt', 'sesameoil'],
+    steps: [
+      '海带提前泡发洗净切段（或直接用海带结）。',
+      '豆腐切块，姜切丝。',
+      '锅里水烧开，下海带和姜丝煮 10 分钟。',
+      '加豆腐再煮 5 分钟，加盐，滴香油，撒葱花。',
+    ],
+    kcal: 130, protein: 12, carb: 8, fat: 5,
+    minutes: 20, difficulty: '简单',
+    tags: ['汤', '低卡', '补碘', '素食'], serves: 2, method: '煮', cuisine: '家常菜', taste: '鲜',
+    tools: ['汤锅'], allergens: ['大豆'],
+    tips: '海带用淘米水泡更容易洗净泥沙。',
+    substitutes: '海带可换裙带菜、紫菜；豆腐可换豆干。',
+    storage: '冷藏 2 天。',
+    cost: 8, failpoints: '海带没泡透会硬；豆腐下锅后大火翻会碎。',
+  },
+  {
+    id: 's07', name: '菌菇豆腐汤', emoji: '🍄⬜', category: 'soup',
+    main: ['enoki', 'tofu'], sub: ['kingoyster', 'scallion', 'ginger'], seas: ['salt', 'whitepowder', 'sesameoil'],
+    steps: [
+      '金针菇去根洗净撕散，杏鲍菇切片，豆腐切块。',
+      '锅里少油，下姜丝、杏鲍菇炒出香味。',
+      '加两碗水烧开，煮 5 分钟。',
+      '下金针菇和豆腐，再煮 3 分钟，加盐、白胡椒粉，滴香油撒葱花。',
+    ],
+    kcal: 110, protein: 11, carb: 10, fat: 4,
+    minutes: 18, difficulty: '简单',
+    tags: ['汤', '低卡', '鲜', '素食'], serves: 2, method: '煮', cuisine: '家常菜', taste: '鲜香',
+    tools: ['汤锅', '炒锅'], allergens: ['大豆'],
+    tips: '菌菇先炒一下再煮，汤会鲜很多。',
+    substitutes: '菌菇随意组合：金针菇/香菇/杏鲍菇都行。',
+    storage: '冷藏 1 天。',
+    cost: 10, failpoints: '菌菇不炒直接煮，汤会寡淡；金针菇煮太久会老。',
+  },
+  {
+    id: 's08', name: '银耳莲子羹', emoji: '🤍🪷', category: 'soup',
+    main: ['silvereer', 'lotusseed'], sub: ['goji'], seas: ['rockcandy'],
+    steps: [
+      '银耳提前用冷水泡发 2 小时，去掉黄色根部，撕小朵。',
+      '莲子泡 30 分钟（去芯不苦）。',
+      '银耳 + 莲子 + 足量水，大火烧开转小火炖 40 分钟。',
+      '加冰糖再炖 20 分钟至出胶（汤汁变黏稠）。',
+      '关火前 5 分钟放枸杞。',
+    ],
+    kcal: 160, protein: 4, carb: 36, fat: 1,
+    minutes: 80, difficulty: '简单',
+    tags: ['甜汤', '润燥', '养颜', '素食'], serves: 3, method: '炖', cuisine: '糖水', taste: '清甜',
+    tools: ['炖锅'], allergens: [],
+    tips: '银耳一定要冷水泡发、撕得够小，才容易出胶。',
+    substitutes: '银耳可加红枣、百合、雪梨一起炖。',
+    storage: '冷藏 3 天，冷吃也好吃。',
+    cost: 12, failpoints: '银耳泡发不够不会出胶；火太大水分蒸发太快会糊底。',
+  },
+  {
+    id: 's09', name: '萝卜牛腩汤', emoji: '🥕🥩', category: 'soup',
+    main: ['radish', 'beef'], sub: ['ginger', 'onion'], seas: ['salt', 'cookingwine', 'soysauce', 'staranise'],
+    steps: [
+      '牛腩切块冷水下锅焯水，撇沫捞出。',
+      '白萝卜去皮切滚刀块。',
+      '牛腩 + 姜 + 八角 + 水，大火烧开转小火炖 60 分钟。',
+      '加白萝卜再炖 25 分钟至软烂，加盐、少许生抽调味。',
+    ],
+    kcal: 350, protein: 30, carb: 12, fat: 20,
+    minutes: 100, difficulty: '中等',
+    tags: ['汤', '滋补', '暖身', '硬菜'], serves: 3, method: '炖', cuisine: '家常菜', taste: '浓郁清甜',
+    tools: ['炖锅'], allergens: ['大豆'],
+    tips: '牛腩一定用热水补汤；白萝卜后放才不会烂成泥。',
+    substitutes: '牛腩可换牛腱；白萝卜可换胡萝卜、番茄。',
+    storage: '冷藏 3 天，冷冻 1 个月。',
+    cost: 48, failpoints: '中途加冷水肉会紧缩变柴；八角放太多会抢味。',
+  },
+
+  /* ------------------ 粥品 ------------------ */
+  {
+    id: 'p01', name: '白米粥', emoji: '🍚🥣', category: 'porridge',
+    main: ['rice'], sub: [], seas: [],
+    steps: [
+      '大米淘洗 2—3 遍（不要搓，会流失营养）。',
+      '米 + 水按 1:10 比例放锅里，泡 20 分钟。',
+      '大火烧开，转小火慢煮 30 分钟，其间偶尔搅动防糊底。',
+      '煮到米粒开花、汤汁浓稠即可。',
+    ],
+    kcal: 180, protein: 4, carb: 40, fat: 1,
+    minutes: 45, difficulty: '简单',
+    tags: ['粥', '养胃', '清淡', '基础'], serves: 2, method: '煮', cuisine: '主食', taste: '清淡',
+    tools: ['汤锅'], allergens: [],
+    tips: '米先泡 20 分钟更容易开花；滴几滴油粥更香更亮。',
+    substitutes: '大米可换小米、糙米、燕麦。',
+    storage: '冷藏 1 天，再热时加水稀释。',
+    cost: 2, failpoints: '不搅拌会糊底；水放太少会变成饭。',
+  },
+  {
+    id: 'p02', name: '小米南瓜粥', emoji: '🎃🌾', category: 'porridge',
+    main: ['millet', 'pumpkin'], sub: [], seas: [],
+    steps: [
+      '小米淘洗，南瓜去皮切小块。',
+      '小米 + 水（1:12）大火烧开。',
+      '下南瓜块，转小火煮 25 分钟，其间搅动。',
+      '南瓜煮化、小米开花变黏稠即可（可压碎南瓜更均匀）。',
+    ],
+    kcal: 200, protein: 5, carb: 42, fat: 2,
+    minutes: 35, difficulty: '简单',
+    tags: ['粥', '养胃', '暖身', '儿童友好'], serves: 2, method: '煮', cuisine: '主食', taste: '清甜',
+    tools: ['汤锅'], allergens: [],
+    tips: '南瓜自带甜味，不用加糖；压碎南瓜粥会更绵密。',
+    substitutes: '南瓜可换红薯、山药；小米可加一把大米更黏。',
+    storage: '冷藏 1 天。',
+    cost: 5, failpoints: '小米不搅会糊底；南瓜切太大块不易煮化。',
+  },
+  {
+    id: 'p03', name: '皮蛋瘦肉粥', emoji: '🥚🥓', category: 'porridge',
+    main: ['rice', 'pork', 'egg'], sub: ['ginger', 'scallion'], seas: ['salt', 'whitepowder', 'sesameoil'],
+    steps: [
+      '大米淘洗后加少许油和盐拌匀，腌 15 分钟（更易开花）。',
+      '瘦肉切丝，加盐、白胡椒腌 10 分钟；皮蛋切小块。',
+      '米 + 水（1:12）大火烧开转小火煮 25 分钟。',
+      '下肉丝煮 5 分钟，再下皮蛋煮 3 分钟。',
+      '加盐、白胡椒粉，撒姜丝葱花，滴几滴香油。',
+    ],
+    kcal: 320, protein: 18, carb: 42, fat: 9,
+    minutes: 55, difficulty: '中等',
+    tags: ['粥', '咸粥', '经典', '饱腹'], serves: 2, method: '煮', cuisine: '粤菜', taste: '咸鲜',
+    tools: ['汤锅'], allergens: ['蛋'],
+    tips: '米先用油盐腌，煮出来更绵；皮蛋晚点放，才不会煮化。',
+    substitutes: '瘦肉可换鸡丝、牛肉末。',
+    storage: '冷藏 1 天。',
+    cost: 10, failpoints: '米不腌、火不够小，粥不绵；皮蛋放太早会化掉。',
+  },
+  {
+    id: 'p04', name: '红豆糯米粥', emoji: '🍙🔴', category: 'porridge',
+    main: ['glutinous', 'redbean'], sub: ['goji'], seas: ['rockcandy'],
+    steps: [
+      '糯米和红豆提前泡 2 小时（糯米 30 分钟也行）。',
+      '红豆先煮 30 分钟至半软。',
+      '加糯米继续小火煮 30 分钟。',
+      '加冰糖煮 5 分钟，关火前放枸杞。',
+    ],
+    kcal: 300, protein: 7, carb: 64, fat: 2,
+    minutes: 90, difficulty: '简单',
+    tags: ['粥', '甜粥', '补气血', '暖身'], serves: 3, method: '煮', cuisine: '主食', taste: '香甜',
+    tools: ['汤锅'], allergens: [],
+    tips: '红豆先煮软再下糯米，不然红豆还是硬的。',
+    substitutes: '糯米可换黑米、燕麦；红豆可换绿豆。',
+    storage: '冷藏 2 天。',
+    cost: 10, failpoints: '红豆没泡够会久煮不烂；糯米太多会太黏糊。',
+  },
+  {
+    id: 'p05', name: '燕麦豆浆粥', emoji: '🌾🥛', category: 'porridge',
+    main: ['oat', 'soymilk'], sub: [], seas: [],
+    steps: [
+      '燕麦片放入锅中，加豆浆没过。',
+      '中小火煮 3—5 分钟，不停搅拌。',
+      '煮到浓稠、燕麦变软即可。',
+      '可加香蕉片、坚果碎、蜂蜜调味。',
+    ],
+    kcal: 230, protein: 9, carb: 38, fat: 6,
+    minutes: 8, difficulty: '简单',
+    tags: ['粥', '快手', '早餐', '减脂'], serves: 1, method: '煮', cuisine: '西式', taste: '清淡微甜',
+    tools: ['汤锅'], allergens: ['大豆'],
+    tips: '用即食燕麦 1 分钟搞定；用钢切燕麦要煮 15 分钟以上。',
+    substitutes: '燕麦可换藜麦、小米；豆浆可换牛奶。',
+    storage: '最好现煮现吃。',
+    cost: 5, failpoints: '不搅拌会糊底；煮太久会变成糊糊。',
+  },
+  {
+    id: 'p06', name: '绿豆薏米粥', emoji: '🫘🌾', category: 'porridge',
+    main: ['mungbean', 'barley'], sub: [], seas: ['rockcandy'],
+    steps: [
+      '绿豆、薏米提前泡 2 小时。',
+      '一起下锅，加足量水大火烧开。',
+      '转小火煮 40 分钟至绿豆开花、薏米软糯。',
+      '喜欢甜的可加冰糖煮 5 分钟。',
+    ],
+    kcal: 220, protein: 9, carb: 44, fat: 2,
+    minutes: 55, difficulty: '简单',
+    tags: ['粥', '消暑', '祛湿', '素食'], serves: 2, method: '煮', cuisine: '主食', taste: '清淡',
+    tools: ['汤锅'], allergens: [],
+    tips: '薏米很难煮软，一定要提前泡够时间。',
+    substitutes: '薏米可换大米、小米；绿豆可换红豆。',
+    storage: '冷藏 2 天。',
+    cost: 6, failpoints: '薏米不泡会久煮不烂；绿豆煮太久会全化成沙。',
+  },
+  {
+    id: 'p07', name: '香菇鸡肉粥', emoji: '🍄🍗', category: 'porridge',
+    main: ['rice', 'chicken', 'mushroom'], sub: ['ginger', 'scallion'], seas: ['salt', 'whitepowder', 'sesameoil', 'soysauce'],
+    steps: [
+      '大米淘洗，加少许油腌 10 分钟；鸡肉切丝用盐、生抽腌 10 分钟。',
+      '香菇切片，姜切丝。',
+      '米 + 水（1:12）大火烧开转小火煮 25 分钟。',
+      '下香菇煮 5 分钟，再下鸡肉丝煮 5 分钟。',
+      '加盐、白胡椒，撒姜丝葱花，滴香油。',
+    ],
+    kcal: 300, protein: 20, carb: 42, fat: 7,
+    minutes: 50, difficulty: '简单',
+    tags: ['粥', '咸粥', '养胃', '儿童友好'], serves: 2, method: '煮', cuisine: '主食', taste: '鲜香',
+    tools: ['汤锅'], allergens: ['大豆'],
+    tips: '鸡肉最后放，煮 5 分钟就够，久了会柴。',
+    substitutes: '鸡肉可换瘦肉、虾仁；香菇可换口蘑、平菇。',
+    storage: '冷藏 1 天。',
+    cost: 12, failpoints: '鸡肉煮太久会老；粥底没煮绵就下料，口感分层。',
+  },
+  {
+    id: 'p08', name: '山药小米粥', emoji: '🍠🌾', category: 'porridge',
+    main: ['yam', 'millet'], sub: ['goji'], seas: [],
+    steps: [
+      '山药去皮切小丁（戴手套），小米淘洗。',
+      '小米 + 水（1:12）大火烧开。',
+      '下山药丁，转小火煮 25 分钟，其间搅动。',
+      '煮到黏稠，关火前放枸杞。',
+    ],
+    kcal: 210, protein: 6, carb: 44, fat: 2,
+    minutes: 35, difficulty: '简单',
+    tags: ['粥', '养胃', '清淡', '养生'], serves: 2, method: '煮', cuisine: '主食', taste: '清淡微甜',
+    tools: ['汤锅'], allergens: [],
+    tips: '山药切小丁更快煮化，粥更绵。',
+    substitutes: '山药可换南瓜、红薯、莲子。',
+    storage: '冷藏 1 天。',
+    cost: 7, failpoints: '山药不泡水会发黑；小米粥不搅会糊底。',
+  },
+
+  /* ------------------ 主食 ------------------ */
+  {
+    id: 'm01', name: '西红柿鸡蛋面', emoji: '🍜🍅', category: 'staple',
+    main: ['noodle', 'tomato', 'egg'], sub: ['scallion'], seas: ['oil', 'salt', 'soysauce'],
+    steps: [
+      '番茄切块，鸡蛋打散；另起一锅烧水煮面。',
+      '炒锅热油炒鸡蛋，盛出。',
+      '下番茄炒出汁，加两碗水烧开，加盐和少许生抽调味。',
+      '面煮好后捞进汤里，铺上鸡蛋，撒葱花。',
+    ],
+    kcal: 420, protein: 18, carb: 62, fat: 12,
+    minutes: 18, difficulty: '简单',
+    tags: ['一锅出', '饱腹', '快手', '主食'], serves: 1, method: '煮', cuisine: '家常菜', taste: '酸鲜',
+    tools: ['炒锅', '汤锅'], allergens: ['蛋', '小麦'],
+    tips: '番茄多炒一会儿出沙，汤才浓。',
+    substitutes: '面条可换挂面、手擀面、米线；想更鲜可加紫菜。',
+    storage: '现做现吃，面泡久会坨。',
+    cost: 7, failpoints: '汤太稀没味道（水放多了）；面煮过头会烂。',
+  },
+  {
+    id: 'm02', name: '蛋炒饭', emoji: '🍚🥚', category: 'staple',
+    main: ['rice', 'egg'], sub: ['scallion', 'carrot', 'corn'], seas: ['oil', 'salt', 'soysauce'],
+    steps: [
+      '用隔夜冷饭最好，先把米饭打散（没有大块）。',
+      '鸡蛋打散，胡萝卜切小丁，玉米粒备好。',
+      '热锅热油炒鸡蛋，半凝固时倒入米饭，快速翻炒打散。',
+      '加胡萝卜、玉米炒 1 分钟，加盐、少许生抽，撒葱花出锅。',
+    ],
+    kcal: 480, protein: 16, carb: 68, fat: 16,
+    minutes: 12, difficulty: '简单',
+    tags: ['快手', '剩饭利用', '饱腹', '主食'], serves: 1, method: '炒', cuisine: '家常菜', taste: '咸香',
+    tools: ['炒锅'], allergens: ['蛋', '大豆'],
+    tips: '隔夜冷饭 + 大火，是粒粒分明的秘诀。',
+    substitutes: '胡萝卜玉米可换豌豆、火腿丁、虾仁。',
+    storage: '现做现吃。',
+    cost: 5, failpoints: '新煮的饭太黏会炒成团；火小会炒不香。',
+  },
+  {
+    id: 'm03', name: '咖喱土豆鸡饭', emoji: '🍛🥔', category: 'staple',
+    main: ['chicken', 'potato', 'carrot', 'rice'], sub: ['onion'], seas: ['curry', 'oil', 'salt'],
+    steps: [
+      '鸡腿肉切块，土豆、胡萝卜滚刀块，洋葱切块。',
+      '热锅倒油，下洋葱炒香，加鸡肉炒到变色。',
+      '加土豆、胡萝卜翻炒 2 分钟，加水没过食材，煮 15 分钟至软。',
+      '关火放入咖喱块搅化，小火再煮 5 分钟至浓稠。',
+      '浇在米饭上。',
+    ],
+    kcal: 620, protein: 28, carb: 82, fat: 20,
+    minutes: 40, difficulty: '简单',
+    tags: ['一锅出', '拌饭神器', '主食'], serves: 3, method: '煮', cuisine: '日式', taste: '浓香',
+    tools: ['炖锅'], allergens: ['小麦', '乳'],
+    tips: '咖喱块一定要关火后再放，不然会结块糊底。',
+    substitutes: '胡萝卜可换南瓜；鸡肉换牛肉（多煮 10 分钟）。',
+    storage: '冷藏 2 天，隔夜更入味。',
+    cost: 30, failpoints: '开火放咖喱块会糊底结块；水太少会糊锅。',
+  },
+  {
+    id: 'm04', name: '番茄牛腩拌饭', emoji: '🍅🥩', category: 'staple',
+    main: ['beef', 'tomato', 'rice'], sub: ['onion', 'ginger'], seas: ['oil', 'salt', 'soysauce', 'cookingwine'],
+    steps: [
+      '牛腩切块，冷水下锅加姜片料酒焯 5 分钟，撇沫捞出冲洗。',
+      '番茄切块（一半切碎出汁、一半切大块），洋葱切块。',
+      '热锅倒油，炒香洋葱，下碎番茄炒出沙。',
+      '放牛腩翻炒，加热水没过，大火烧开转小火炖 60 分钟。',
+      '加大块番茄和盐、生抽，再炖 15 分钟，浇在米饭上。',
+    ],
+    kcal: 620, protein: 40, carb: 66, fat: 24,
+    minutes: 95, difficulty: '中等',
+    tags: ['硬菜', '高蛋白', '拌饭', '主食'], serves: 3, method: '炖', cuisine: '家常菜', taste: '酸甜浓郁',
+    tools: ['炖锅'], allergens: ['大豆'],
+    tips: '一定加热水，加冷水肉会紧缩变柴；小火慢炖才软烂。',
+    substitutes: '牛腩可换牛腱、牛肋条；可加一勺番茄酱增色。',
+    storage: '冷藏 3 天，冷冻 1 个月。',
+    cost: 48, failpoints: '中途加冷水；炖的时间不够会嚼不动。',
+  },
+];
+
+/* 导出（供 app.js 使用；纯前端直接挂全局） */
+window.FOOD_DATA = { INGREDIENTS, ING_MAP, SEASONINGS, SEASONING_MAP, RECIPES };
+
+</script>
+<script>
+/* ===== 逻辑（原 assets/js/app.js） ===== */
+/* ==========================================================
+   今天吃什么 · 主逻辑
+   ========================================================== */
+(function () {
+'use strict';
+
+const { INGREDIENTS, ING_MAP, SEASONINGS, SEASONING_MAP, RECIPES } = window.FOOD_DATA;
+
+/* ================= 常量 ================= */
+const MEALS = [
+  { key: 'breakfast', name: '早餐', emoji: '🌅' },
+  { key: 'lunch',     name: '午餐', emoji: '☀️' },
+  { key: 'dinner',    name: '晚餐', emoji: '🌙' },
+  { key: 'snack',     name: '加餐', emoji: '🍪' },
+];
+const MEAL_MAP = Object.fromEntries(MEALS.map(m => [m.key, m]));
+
+const WEEKDAYS = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+
+const GOALS = {
+  cut:  { kcal: 1600, p: 100, c: 180, f: 50, label: '减脂' },
+  keep: { kcal: 2000, p: 90,  c: 250, f: 65, label: '维持' },
+  bulk: { kcal: 2600, p: 140, c: 320, f: 85, label: '增肌' },
+};
+
+const ALLERGENS = ['蛋', '大豆', '乳', '小麦', '甲壳类'];
+
+/* 菜谱类型（菜品 / 汤品 / 粥品 / 主食） */
+const CATEGORIES = [
+  { key: 'dish',     name: '菜品', emoji: '🍳' },
+  { key: 'soup',     name: '汤品', emoji: '🍲' },
+  { key: 'porridge', name: '粥品', emoji: '🥣' },
+  { key: 'staple',   name: '主食', emoji: '🍚' },
+];
+const CATEGORY_MAP = Object.fromEntries(CATEGORIES.map(c => [c.key, c]));
+
+/* 食材在首页/选择区的分组顺序（按用户提供的食材图分类） */
+const ING_KINDS = [
+  { key: '叶菜',   emoji: '🥬' },
+  { key: '根茎',   emoji: '🥕' },
+  { key: '瓜果',   emoji: '🍅' },
+  { key: '香辛',   emoji: '🧅' },
+  { key: '豆类',   emoji: '🫘' },
+  { key: '豆制品', emoji: '⬜' },
+  { key: '菌菇',   emoji: '🍄' },
+  { key: '藻类',   emoji: '🌿' },
+  { key: '谷物',   emoji: '🌾' },
+  { key: '坚果',   emoji: '🌰' },
+  { key: '肉',     emoji: '🥩' },
+  { key: '蛋',     emoji: '🥚' },
+  { key: '水产',   emoji: '🦐' },
+  { key: '制品',   emoji: '🍜' },
+];
+
+const STORE_KEY = 'jtcsm_v1';
+
+/* ================= 状态 ================= */
+function defaultState() {
+  return {
+    version: 1,
+    theme: 'light',
+    selected: [],                 // 已选食材 id
+    plan: {},                     // { '2026-10-13': { breakfast:[], lunch:[], dinner:[], snack:[] } }
+    shopChecked: {},              // { '2026-10-13|day|tomato': true }
+    fridge: [],                   // [{id, ing, qty, unit, exp}]
+    goal: { type: 'keep', kcal: 2000, p: 90, c: 250, f: 65 },
+    exercise: {},                 // { '2026-10-13': 300 }
+    checkins: [],                 // ['2026-10-13', ...]
+    photos: [],                   // [{ts, data}]
+    serves: 1,
+    challengeStart: todayStr(),
+  };
+}
+
+let state = load();
+
+function load() {
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    if (!raw) return defaultState();
+    const d = JSON.parse(raw);
+    return Object.assign(defaultState(), d);
+  } catch (e) {
+    console.warn('读取本地数据失败，已重置', e);
+    return defaultState();
+  }
+}
+
+let saveTimer = null;
+function save() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    try {
+      // URL 临时指定的主题不写入本地存储，避免"粘住"
+      const toSave = Object.assign({}, state);
+      if (state._themeFromUrl) delete toSave.theme;
+      delete toSave._themeFromUrl;
+      delete toSave._demoLoaded;
+      delete toSave._lastRec;
+      localStorage.setItem(STORE_KEY, JSON.stringify(toSave));
+    }
+    catch (e) { toast('保存失败：本机存储可能已满'); }
+  }, 120);
+}
+
+/* ================= 工具 ================= */
+function todayStr(d) {
+  const t = d ? new Date(d) : new Date();
+  return fmtDate(t);
+}
+function fmtDate(d) {
+  const y = d.getFullYear(), m = String(d.getMonth() + 1).padStart(2, '0'), dd = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${dd}`;
+}
+function parseDate(s) {
+  const [y, m, d] = s.split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
+function addDays(s, n) {
+  const d = parseDate(s); d.setDate(d.getDate() + n); return fmtDate(d);
+}
+function weekStart(s) {  // 周一为一周开始
+  const d = parseDate(s);
+  const wd = d.getDay();          // 0=周日
+  const diff = wd === 0 ? -6 : 1 - wd;
+  return addDays(s, diff);
+}
+function dateLabel(s) {
+  const d = parseDate(s);
+  const t = todayStr(), tm = addDays(t, 1), ym = addDays(t, -1);
+  let prefix = '';
+  if (s === t) prefix = '今天 · ';
+  else if (s === tm) prefix = '明天 · ';
+  else if (s === ym) prefix = '昨天 · ';
+  return prefix + `${d.getMonth() + 1} 月 ${d.getDate()} 日 ${WEEKDAYS[d.getDay()]}`;
+}
+function esc(str) {
+  return String(str == null ? '' : str).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+function ing(id) { return ING_MAP[id] || { id, name: id, emoji: '🥄', group: '其他' }; }
+function sea(id) { return SEASONING_MAP[id] || { id, name: id, emoji: '🧂' }; }
+function rcp(id) { return RECIPES.find(r => r.id === id); }
+
+/* 食材的显示名：主料/辅料用 ING_MAP，调料用 SEASONING_MAP */
+function anyName(id) {
+  if (ING_MAP[id]) return ING_MAP[id].name;
+  if (SEASONING_MAP[id]) return SEASONING_MAP[id].name;
+  return id;
+}
+function anyEmoji(id) {
+  if (ING_MAP[id]) return ING_MAP[id].emoji;
+  if (SEASONING_MAP[id]) return SEASONING_MAP[id].emoji;
+  return '🥄';
+}
+function anyGroup(id) {
+  if (ING_MAP[id]) return ING_MAP[id].group;   // 蔬菜 / 肉蛋 / 主食 / 坚果
+  if (SEASONING_MAP[id]) return '调料';
+  return '其他';
+}
+
+/* ================= 计划读写 ================= */
+function getPlan(date) {
+  if (!state.plan[date]) state.plan[date] = { breakfast: [], lunch: [], dinner: [], snack: [] };
+  const p = state.plan[date];
+  MEALS.forEach(m => { if (!Array.isArray(p[m.key])) p[m.key] = []; });
+  return p;
+}
+function addToPlan(date, meal, recipeId, servings) {
+  const p = getPlan(date);
+  p[meal].push({ rid: recipeId, servings: servings || 1, done: false, ts: Date.now() });
+  save();
+}
+function planHas(date, meal, rid) {
+  return (getPlan(date)[meal] || []).some(it => it.rid === rid);
+}
+
+/* 计算某天某餐热量 */
+function mealKcal(date, meal) {
+  return (getPlan(date)[meal] || []).reduce((s, it) => {
+    const r = rcp(it.rid); if (!r) return s;
+    return s + r.kcal * (it.servings || 1);
+  }, 0);
+}
+/* 计算某天营养 */
+function dayNutri(date) {
+  const t = { kcal: 0, p: 0, c: 0, f: 0, count: 0 };
+  MEALS.forEach(m => {
+    (getPlan(date)[m.key] || []).forEach(it => {
+      const r = rcp(it.rid); if (!r) return;
+      const k = it.servings || 1;
+      t.kcal += r.kcal * k; t.p += r.protein * k; t.c += r.carb * k; t.f += r.fat * k;
+      t.count++;
+    });
+  });
+  return t;
+}
+
+/* ================= 推荐算法 ================= */
+/* 说明：调料默认家里都有（seas 记为 seasHave，不参与"缺"的提示） */
+function recommend(selectedIds, opts) {
+  opts = opts || {};
+  const sel = new Set(selectedIds);
+  // 快过期食材优先
+  const expiring = state.fridge.filter(f => f.exp && f.exp <= addDays(todayStr(), 2)).map(f => f.ing);
+  const expSet = new Set(expiring);
+
+  const list = RECIPES.filter(r => {
+    if (opts.veg && isNonVeg(r)) return false;
+    if (opts.noChili && usesChili(r)) return false;
+    if (opts.noCilantro && (r.main.includes('cilantro') || (r.sub || []).includes('cilantro'))) return false;
+    if (opts.avoid && opts.avoid.length && r.allergens.some(a => opts.avoid.includes(a))) return false;
+    if (opts.category && r.category !== opts.category) return false;
+    return true;
+  }).map(r => {
+    const mains = r.main;
+    const haveMain = mains.filter(m => sel.has(m));
+    const missMain = mains.filter(m => !sel.has(m));
+    const subHave = (r.sub || []).filter(s => sel.has(s));
+    const subMiss = (r.sub || []).filter(s => !sel.has(s));
+
+    // 匹配度：只看主料（调料默认有）
+    let mainRatio = mains.length ? haveMain.length / mains.length : 0;
+    let score = mainRatio * 86;
+    if (subHave.length) score += Math.min(subHave.length * 3, 6);
+    // 快过期优先
+    const expHit = mains.filter(m => expSet.has(m)).length;
+    if (expHit) score += Math.min(expHit * 5, 10);
+    // 全主料齐 + 加分
+    if (missMain.length === 0) score += 8;
+    // 缺主料太多则减分
+    if (mainRatio < 0.4) score -= 18;
+
+    return {
+      recipe: r, score: Math.max(0, Math.round(score)),
+      haveMain, missMain, subHave, subMiss,
+      ready: missMain.length === 0,
+    };
+  });
+
+  return list
+    .filter(x => x.score > 12)
+    .sort((a, b) => (b.ready - a.ready) || (b.score - a.score))
+    .slice(0, opts.limit || 5);
+}
+
+function isNonVeg(r) {
+  const meat = ['beef', 'pork', 'porkbelly', 'chicken', 'chickenwing', 'shrimp', 'fish'];
+  if (r.main.some(m => meat.includes(m))) return true;
+  if ((r.sub || []).some(m => meat.includes(m))) return true;
+  return false;
+}
+function usesChili(r) {
+  return (r.seas || []).some(s => s === 'chili' || s === 'chilipaste') || (r.taste || '').includes('辣');
+}
+
+/* ================= DOM 助手 ================= */
+const $  = (s, root) => (root || document).querySelector(s);
+const $$ = (s, root) => Array.from((root || document).querySelectorAll(s));
+
+function toast(msg, ms) {
+  const el = $('#toast');
+  el.textContent = msg;
+  el.hidden = false;
+  clearTimeout(el._t);
+  el._t = setTimeout(() => { el.hidden = true; }, ms || 1900);
+}
+
+/* ================= 导航 ================= */
+let currentView = 'home';
+function nav(view) {
+  currentView = view;
+  $$('.view').forEach(v => { v.hidden = v.id !== 'view-' + view; });
+  $$('.tab').forEach(t => t.classList.toggle('is-active', t.dataset.nav === view));
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  if (view === 'home')    renderHome();
+  if (view === 'plan')    renderPlan();
+  if (view === 'recipes') renderRecipes();
+  if (view === 'shop')    renderShop();
+  if (view === 'week')    renderWeek();
+  if (view === 'fridge')  renderFridgePage();
+  if (view === 'me')      renderMe();
+}
+document.addEventListener('click', e => {
+  const n = e.target.closest('[data-nav]');
+  if (n) { nav(n.dataset.nav); }
+});
+
+/* ================= 视图 1：首页 ================= */
+function renderHome() {
+  renderSelectedChips();
+  renderIngGroups();
+  if (state._lastRec) renderRecommend();
+}
+
+function renderSelectedChips() {
+  const box = $('#selectedChips');
+  const n = state.selected.length;
+  $('#selCount').textContent = n;
+  if (!n) {
+    box.innerHTML = '<p class="muted-sm">还没选食材，下面点一点试试～</p>';
+    return;
+  }
+  box.innerHTML = state.selected.map(id => {
+    const g = ing(id);
+    return `<button class="chip sel" data-unsel="${id}">${g.emoji} ${esc(g.name)} <span class="x">✕</span></button>`;
+  }).join('');
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-unsel]');
+  if (b) {
+    state.selected = state.selected.filter(x => x !== b.dataset.unsel);
+    save(); renderSelectedChips(); renderIngGroups();
+    return;
+  }
+  const s = e.target.closest('[data-sel]');
+  if (s) {
+    const id = s.dataset.sel;
+    if (state.selected.includes(id)) state.selected = state.selected.filter(x => x !== id);
+    else state.selected.push(id);
+    save(); renderSelectedChips(); renderIngGroups();
+  }
+});
+
+let ingKindFilter = '';   // 当前选中的食材大类（空=全部）
+
+function renderIngGroups() {
+  const box = $('#ingGroups');
+  $('#ingHint').textContent = `已选 ${state.selected.length} 种`;
+
+  // 大类切换按钮
+  const kindBar = `
+    <div class="kind-bar">
+      <button class="chip sm ${ingKindFilter === '' ? 'ond' : ''}" data-kind="">全部</button>
+      ${ING_KINDS.map(k => {
+        const n = INGREDIENTS.filter(i => i.kind === k.key).length;
+        if (!n) return '';
+        return `<button class="chip sm ${ingKindFilter === k.key ? 'ond' : ''}" data-kind="${k.key}">${k.emoji} ${k.key} <i class="cnt">${n}</i></button>`;
+      }).join('')}
+    </div>`;
+
+  const kinds = ingKindFilter
+    ? ING_KINDS.filter(k => k.key === ingKindFilter)
+    : ING_KINDS;
+
+  const groups = kinds.map(k => {
+    const list = INGREDIENTS.filter(i => i.kind === k.key);
+    if (!list.length) return '';
+    return `
+      <div class="ing-group">
+        <div class="ing-group-title">${k.emoji} ${k.key}类 <span class="gc">${list.length}</span></div>
+        <div class="chip-wrap">
+          ${list.map(i => `<button class="chip ${state.selected.includes(i.id) ? 'ond' : ''}" data-sel="${i.id}"><span class="em">${i.emoji}</span>${esc(i.name)}</button>`).join('')}
+        </div>
+      </div>`;
+  }).join('');
+
+  box.innerHTML = kindBar + groups;
+}
+
+/* 大类切换 */
+document.addEventListener('click', e => {
+  const k = e.target.closest('[data-kind]');
+  if (k) { ingKindFilter = k.dataset.kind; renderIngGroups(); }
+});
+
+/* ---------- 推荐 ---------- */
+function doRecommend() {
+  if (!state.selected.length) { toast('先选几样食材吧～'); return; }
+  state._lastRec = true;
+  renderRecommend();
+  setTimeout(() => {
+    const el = $('#recommendArea');
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 60);
+}
+
+function renderRecommend() {
+  const box = $('#recommendArea');
+  const list = recommend(state.selected, { limit: 5 });
+
+  if (!list.length) {
+    box.innerHTML = `<div class="rec-head"><h2>推荐结果</h2></div>
+      <div class="empty"><span class="big">🤔</span>
+      <p>这些食材暂时配不出合适的菜。<br>再选几样试试，或者去「菜谱」随便逛逛～</p></div>`;
+    return;
+  }
+
+  const readyCount = list.filter(x => x.ready).length;
+  box.innerHTML = `
+    <div class="rec-head">
+      <h2>能做这些菜 <span class="muted-sm">共 ${list.length} 道</span></h2>
+      <span class="muted-sm">${readyCount ? `✅ ${readyCount} 道材料齐` : '差一点点'}</span>
+    </div>
+    ${list.map((x, i) => recCardHTML(x, i)).join('')}
+  `;
+}
+
+function recCardHTML(x, i) {
+  const r = x.recipe;
+  const tags = [];
+  if (x.ready) tags.push('<span class="tag ok">✅ 主料齐</span>');
+  x.haveMain.forEach(m => tags.push(`<span class="tag ok">${anyEmoji(m)} 有${esc(anyName(m))}</span>`));
+  x.missMain.forEach(m => tags.push(`<span class="tag miss">${anyEmoji(m)} 缺${esc(anyName(m))}</span>`));
+  // 调料默认家里有，只做中性展示
+  if (r.seas && r.seas.length) {
+    tags.push(`<span class="tag sea">🧂 调料：${r.seas.map(s => esc(anyName(s))).join('、')}</span>`);
+  } else {
+    tags.push('<span class="tag sea">🧂 调料：无</span>');
+  }
+
+  const catLabel = CATEGORY_MAP[r.category] ? CATEGORY_MAP[r.category].name : '';
+
+  return `
+  <article class="rec-item" data-detail="${r.id}">
+    <div class="rec-top">
+      <div class="rec-info">
+        <div class="rec-name">${esc(r.name)}</div>
+        <div class="rec-meta">
+          ${catLabel ? `<span>${catLabel}</span>` : ''}
+          <span>⏱ ${r.minutes} 分钟</span>
+          <span>🔥 ${r.kcal} kcal</span>
+          <span>📊 ${esc(r.difficulty)}</span>
+          <span>👥 ${r.serves} 人份</span>
+        </div>
+        <div class="rec-tags">${tags.join('')}</div>
+      </div>
+      <div class="rec-score"><b>${x.score}</b>匹配</div>
+    </div>
+    <div class="match-bar"><i style="width:${Math.min(100, x.score)}%"></i></div>
+  </article>`;
+}
+
+/* ================= 视图 2：每日计划 ================= */
+let curDate = todayStr();
+
+function renderPlan() {
+  const d = parseDate(curDate);
+  $('#dateMain').textContent = dateLabel(curDate);
+  $('#dateSub').textContent = curDate;
+  $('#datePicker').value = curDate;
+
+  renderDayNutri();
+  renderMeals();
+}
+
+function renderDayNutri() {
+  const t = dayNutri(curDate);
+  const g = state.goal;
+  const pct = Math.min(100, Math.round(t.kcal / (g.kcal || 1) * 100));
+  const ex = state.exercise[curDate] || 0;
+  const net = t.kcal - ex;
+  const R = 24, C = 2 * Math.PI * R;
+  const off = C * (1 - pct / 100);
+
+  const bars = [
+    { lbl: '蛋白', v: t.p, goal: g.p,  color: 'var(--red)' },
+    { lbl: '碳水', v: t.c, goal: g.c,  color: 'var(--blue)' },
+    { lbl: '脂肪', v: t.f, goal: g.f,  color: 'var(--brand)' },
+  ];
+
+  $('#dayNutri').innerHTML = `
+    <div class="nutri-top">
+      <div>
+        <div class="nutri-kcal">${Math.round(t.kcal)}<span>kcal 已计划</span></div>
+        <div class="muted-sm" style="margin-top:4px">
+          ${t.count} 道菜 · 目标 ${g.kcal} kcal ·
+          运动 -${ex} · <b>净 ${Math.round(net)}</b> kcal
+        </div>
+      </div>
+      <svg class="ring" viewBox="0 0 60 60">
+        <circle class="bg" cx="30" cy="30" r="${R}"></circle>
+        <circle class="fg" cx="30" cy="30" r="${R}"
+          stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}"
+          transform="rotate(-90 30 30)"></circle>
+      </svg>
+    </div>
+    <div class="nutri-bars">
+      ${bars.map(b => {
+        const p = Math.min(100, Math.round(b.v / (b.goal || 1) * 100));
+        return `<div class="nbar">
+          <span class="lbl">${b.lbl}</span>
+          <span class="track"><i style="width:${p}%;background:${b.color}"></i></span>
+          <span class="val">${Math.round(b.v)}/${b.goal}g</span>
+        </div>`;
+      }).join('')}
+    </div>
+    <p class="muted-sm" style="margin-top:9px">* 热量与营养为估算值，仅供参考。</p>
+  `;
+}
+
+function renderMeals() {
+  $('#mealList').innerHTML = MEALS.map(m => {
+    const items = getPlan(curDate)[m.key] || [];
+    const kcal = mealKcal(curDate, m.key);
+    return `
+    <section class="meal">
+      <div class="meal-head">
+        <span class="m-emoji">${m.emoji}</span>
+        <h3>${m.name}</h3>
+        ${kcal ? `<span class="m-kcal">${Math.round(kcal)} kcal</span>` : ''}
+        <button class="m-add" data-addmeal="${m.key}" title="添加菜谱">＋</button>
+      </div>
+      <div class="meal-body">
+        ${items.length ? items.map((it, idx) => {
+          const r = rcp(it.rid);
+          if (!r) return '';
+          return `
+          <div class="plan-item ${it.done ? 'done' : ''}">
+            <button class="pi-check" data-toggle="${m.key}:${idx}">✓</button>
+            <div class="pi-info" data-detail="${r.id}">
+              <div class="pi-name">${r.emoji || '🍽️'} ${esc(r.name)}</div>
+              <div class="pi-meta">${Math.round(r.kcal * (it.servings || 1))} kcal · ${it.servings || 1} 人份 · ⏱${r.minutes}分</div>
+            </div>
+            <button class="pi-del" data-del="${m.key}:${idx}" title="删除">✕</button>
+          </div>`;
+        }).join('') : `<div class="m-empty">还没有安排，点右上角 ＋ 添加</div>`}
+      </div>
+    </section>`;
+  }).join('');
+}
+
+/* 计划内事件 */
+document.addEventListener('click', e => {
+  const t = e.target.closest('[data-toggle]');
+  if (t) {
+    const [meal, idx] = t.dataset.toggle.split(':');
+    const it = getPlan(curDate)[meal][+idx];
+    if (it) { it.done = !it.done; save(); renderMeals(); }
+    return;
+  }
+  const d = e.target.closest('[data-del]');
+  if (d) {
+    const [meal, idx] = d.dataset.del.split(':');
+    getPlan(curDate)[meal].splice(+idx, 1);
+    save(); renderMeals(); renderDayNutri();
+    toast('已移出计划');
+    return;
+  }
+  const a = e.target.closest('[data-addmeal]');
+  if (a) { openPicker(curDate, a.dataset.addmeal); }
+});
+
+/* 日期切换 */
+$('#dayPrev').onclick = () => { curDate = addDays(curDate, -1); renderPlan(); };
+$('#dayNext').onclick = () => { curDate = addDays(curDate, 1); renderPlan(); };
+$('#btnToday').onclick = () => { curDate = todayStr(); renderPlan(); };
+$('#datePicker').onchange = e => { if (e.target.value) { curDate = e.target.value; renderPlan(); } };
+
+/* ================= 视图 3：菜谱库 ================= */
+function fillFilterOptions() {
+  const methods = [...new Set(RECIPES.map(r => r.method))];
+  const tools = [...new Set(RECIPES.flatMap(r => r.tools))];
+  const fm = $('#fMethod'), ft = $('#fTool');
+  fm.innerHTML = '<option value="">烹饪方式不限</option>' + methods.map(m => `<option>${esc(m)}</option>`).join('');
+  ft.innerHTML = '<option value="">厨具不限</option>' + tools.map(m => `<option>${esc(m)}</option>`).join('');
+  $('#allergenChips').innerHTML = ALLERGENS.map(a =>
+    `<button class="chip sm" data-avoid="${esc(a)}">🚫 ${esc(a)}</button>`).join('');
+}
+
+let avoidList = [];
+let catFilter = '';
+
+function currentFilters() {
+  return {
+    category: catFilter,
+    difficulty: $('#fDifficulty').value,
+    time: $('#fTime').value,
+    method: $('#fMethod').value,
+    tool: $('#fTool').value,
+    sort: $('#fSort').value,
+    veg: $('#fVeg').checked,
+    noChili: $('#fNoChili').checked,
+    noCilantro: $('#fNoCilantro').checked,
+    lowKcal: $('#fLowKcal').checked,
+    avoid: avoidList.slice(),
+    q: ($('#searchInput').value || '').trim().toLowerCase(),
+  };
+}
+
+function filterRecipes(f) {
+  let list = RECIPES.filter(r => {
+    if (f.category && r.category !== f.category) return false;
+    if (f.difficulty && r.difficulty !== f.difficulty) return false;
+    if (f.time) {
+      const t = +f.time;
+      if (t === 999 ? r.minutes < 60 : r.minutes > t) return false;
+    }
+    if (f.method && r.method !== f.method) return false;
+    if (f.tool && !r.tools.includes(f.tool)) return false;
+    if (f.veg && isNonVeg(r)) return false;
+    if (f.noChili && usesChili(r)) return false;
+    if (f.noCilantro && (r.main.includes('cilantro') || (r.sub || []).includes('cilantro'))) return false;
+    if (f.lowKcal && r.kcal > 300) return false;
+    if (f.avoid.length && r.allergens.some(a => f.avoid.includes(a))) return false;
+    if (f.q) {
+      const hay = [r.name, r.cuisine, r.taste, r.method, ...(r.tags || []),
+        ...r.main.map(anyName), ...(r.sub || []).map(anyName), ...(r.seas || []).map(anyName)
+      ].join(' ').toLowerCase();
+      if (!hay.includes(f.q)) return false;
+    }
+    return true;
+  });
+
+  const s = f.sort;
+  if (s === 'kcal-asc')  list.sort((a, b) => a.kcal - b.kcal);
+  if (s === 'kcal-desc') list.sort((a, b) => b.kcal - a.kcal);
+  if (s === 'time-asc')  list.sort((a, b) => a.minutes - b.minutes);
+  if (s === 'cost-asc')  list.sort((a, b) => a.cost - b.cost);
+  return list;
+}
+
+/* 类型切换 */
+document.addEventListener('click', e => {
+  const b = e.target.closest('#catSeg .seg-item');
+  if (b) {
+    catFilter = b.dataset.cat;
+    $$('#catSeg .seg-item').forEach(x => x.classList.toggle('is-active', x === b));
+    renderRecipes();
+  }
+});
+
+function renderRecipes() {
+  const f = currentFilters();
+  const list = filterRecipes(f);
+  $('#recipeTotal').textContent = list.length;
+  const grid = $('#recipeGrid');
+
+  if (!list.length) {
+    grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><span class="big">🔍</span>
+      <p>没有符合条件的菜。<br>试试放宽筛选条件，或清空搜索词。</p></div>`;
+    return;
+  }
+
+  grid.innerHTML = list.map(r => {
+    const c = CATEGORY_MAP[r.category] || { name: '', emoji: '' };
+    return `
+    <article class="rcard" data-detail="${r.id}">
+      <div class="rcard-top">
+        <h3>${esc(r.name)}</h3>
+        <span class="kcal">${r.kcal} kcal</span>
+      </div>
+      <div class="ings">
+        ${r.main.slice(0, 4).map(m => `<span>${anyEmoji(m)} ${esc(anyName(m))}</span>`).join('')}
+      </div>
+      <div class="rcard-foot">
+        <span class="tag cat">${c.emoji} ${c.name}</span>
+        <span class="tag">⏱ ${r.minutes} 分</span>
+        <span class="tag">📊 ${esc(r.difficulty)}</span>
+        <span class="tag">💰 ¥${r.cost}</span>
+        ${(r.tags || []).slice(0, 2).map(t => `<span class="tag">${esc(t)}</span>`).join('')}
+      </div>
+    </article>`;
+  }).join('');
+}
+
+/* 筛选事件 */
+['#fDifficulty', '#fTime', '#fMethod', '#fTool', '#fSort', '#fVeg', '#fNoChili', '#fNoCilantro', '#fLowKcal']
+  .forEach(sel => { const el = $(sel); if (el) el.addEventListener('change', renderRecipes); });
+
+document.addEventListener('click', e => {
+  const a = e.target.closest('[data-avoid]');
+  if (a) {
+    const v = a.dataset.avoid;
+    if (avoidList.includes(v)) avoidList = avoidList.filter(x => x !== v);
+    else avoidList.push(v);
+    a.classList.toggle('ond');
+    renderRecipes();
+  }
+});
+
+/* ================= 视图 4：购物清单 ================= */
+let shopScope = 'day';
+
+function collectShop(scope) {
+  // 返回 { ingId: qty(倍数累加) }
+  // 注意：调料默认家里都有，不进购物清单
+  const acc = {};
+  const add = (id, k) => { acc[id] = (acc[id] || 0) + k; };
+
+  const dates = scope === 'day'
+    ? [curDate]
+    : Array.from({ length: 7 }, (_, i) => addDays(weekStart(curWeekRef), i));
+
+  dates.forEach(d => {
+    MEALS.forEach(m => {
+      (getPlan(d)[m.key] || []).forEach(it => {
+        const r = rcp(it.rid); if (!r) return;
+        const k = it.servings || 1;
+        r.main.forEach(x => add(x, k));
+        (r.sub || []).forEach(x => add(x, k * 0.6));
+        // 调料不再加入购物清单
+      });
+    });
+  });
+
+  // 扣除冰箱已有
+  Object.keys(acc).forEach(id => {
+    const have = state.fridge.filter(f => f.ing === id).reduce((s, f) => s + (+f.qty || 0), 0);
+    if (have > 0) acc[id] = Math.max(0, acc[id] - have);
+  });
+  return acc;
+}
+
+function shopKey(scope, id) { return `${scope === 'day' ? curDate : weekStart(curWeekRef)}|${scope}|${id}`; }
+
+function renderShop(forceScope) {
+  if (forceScope) shopScope = forceScope;
+  $$('#shopScope .seg-item').forEach(b => b.classList.toggle('is-active', b.dataset.scope === shopScope));
+
+  const acc = collectShop(shopScope);
+  const groups = { 蔬菜: [], 肉蛋: [], 主食: [], 坚果: [], 调料: [], 其他: [] };
+  Object.entries(acc).forEach(([id, qty]) => {
+    if (qty <= 0.01) return;
+    const g = anyGroup(id);
+    (groups[g] || groups['其他']).push({ id, qty });
+  });
+
+  const total = Object.values(groups).reduce((s, g) => s + g.length, 0);
+  const checkedCount = Object.values(groups).flat().filter(x => state.shopChecked[shopKey(shopScope, x.id)]).length;
+
+  $('#shopMeta').textContent = shopScope === 'day'
+    ? `来自 ${dateLabel(curDate)} 的 ${dayNutri(curDate).count} 道菜 · 共 ${total} 项（已扣冰箱库存；调料默认有，不计入）`
+    : `来自 ${weekStart(curWeekRef)} 起这一周的全部计划 · 共 ${total} 项（已扣冰箱库存；调料默认有，不计入）`;
+
+  const box = $('#shopList');
+  if (!total) {
+    box.innerHTML = `<div class="empty"><span class="big">🛒</span>
+      <p>${shopScope === 'day' ? '这天还没有安排菜呢。<br>去「计划」里加几道菜吧～' : '这周还没有安排菜呢。<br>去「周计划」排一排吧～'}</p></div>`;
+    return;
+  }
+
+  const order = ['蔬菜', '肉蛋', '主食', '坚果', '调料', '其他'];
+  const icons = { 蔬菜: '🥬', 肉蛋: '🥚', 主食: '🍚', 坚果: '🌰', 调料: '🧂', 其他: '🧺' };
+
+  box.innerHTML = order.filter(g => groups[g].length).map(g => {
+    const arr = groups[g].sort((a, b) => anyName(a.id).localeCompare(anyName(b.id), 'zh'));
+    const done = arr.filter(x => state.shopChecked[shopKey(shopScope, x.id)]).length;
+    return `
+    <section class="shop-group">
+      <h3>${icons[g]} ${g} <span class="cnt">${done}/${arr.length}</span></h3>
+      <ul>
+        ${arr.map(x => {
+          const ck = !!state.shopChecked[shopKey(shopScope, x.id)];
+          const q = x.qty < 1 ? '' : `${Math.round(x.qty * 10) / 10} 份`;
+          return `<li class="${ck ? 'checked' : ''}" data-shopcheck="${x.id}">
+            <span class="shop-check">✓</span>
+            <span class="em">${anyEmoji(x.id)}</span>
+            <span class="nm">${esc(anyName(x.id))}</span>
+            <span class="qty">${q}</span>
+          </li>`;
+        }).join('')}
+      </ul>
+    </section>`;
+  }).join('');
+}
+
+document.addEventListener('click', e => {
+  const li = e.target.closest('[data-shopcheck]');
+  if (li) {
+    const k = shopKey(shopScope, li.dataset.shopcheck);
+    if (state.shopChecked[k]) delete state.shopChecked[k];
+    else state.shopChecked[k] = true;
+    save(); renderShop();
+  }
+});
+$$('#shopScope .seg-item').forEach(b => b.onclick = () => renderShop(b.dataset.scope));
+
+$('#btnShopAll').onclick = () => {
+  const acc = collectShop(shopScope);
+  Object.entries(acc).forEach(([id, q]) => { if (q > 0.01) state.shopChecked[shopKey(shopScope, id)] = true; });
+  save(); renderShop(); toast('已全部勾选');
+};
+$('#btnShopNone').onclick = () => {
+  const acc = collectShop(shopScope);
+  Object.keys(acc).forEach(id => delete state.shopChecked[shopKey(shopScope, id)]);
+  save(); renderShop(); toast('已取消全部勾选');
+};
+$('#btnShopClear').onclick = () => { state.shopChecked = {}; save(); renderShop(); toast('已清除全部勾选记录'); };
+
+/* ================= 视图 5：周计划 ================= */
+let curWeekRef = todayStr();
+
+function renderWeek() {
+  const ws = weekStart(curWeekRef);
+  const we = addDays(ws, 6);
+  $('#weekRange').textContent = `${ws.slice(5)} ~ ${we.slice(5)}`;
+  $('#weekLabel').textContent = ws === weekStart(todayStr()) ? '本周' : `${ws} 开始的一周`;
+
+  const days = Array.from({ length: 7 }, (_, i) => addDays(ws, i));
+  let totalK = 0, daysWith = 0, dishCount = 0;
+  days.forEach(d => {
+    const n = dayNutri(d);
+    totalK += n.kcal;
+    if (n.count) daysWith++;
+    dishCount += n.count;
+  });
+
+  $('#weekSummary').innerHTML = `
+    <div class="wsum"><b>${Math.round(totalK)}</b><small>整周总热量 kcal</small></div>
+    <div class="wsum"><b>${daysWith}/7</b><small>已排天数</small></div>
+    <div class="wsum"><b>${dishCount}</b><small>总菜数（人次）</small></div>
+  `;
+
+  $('#weekGrid').innerHTML = days.map(d => {
+    const n = dayNutri(d);
+    const isToday = d === todayStr();
+    const wd = parseDate(d).getDay();
+    return `
+    <section class="wday">
+      <div class="wday-head ${isToday ? 'today' : ''}">
+        <h3>${WEEKDAYS[wd]}</h3>
+        <span class="wdate">${d.slice(5)}${isToday ? ' · 今天' : ''}</span>
+        <span class="wkcal">${Math.round(n.kcal)} kcal</span>
+      </div>
+      <div class="wday-body">
+        ${MEALS.map(m => {
+          const items = getPlan(d)[m.key] || [];
+          return `
+          <div class="wmeal-row">
+            <span class="wmeal-label">${m.emoji}${m.name}</span>
+            <div class="wmeal-items">
+              ${items.map((it, idx) => {
+                const r = rcp(it.rid); if (!r) return '';
+                return `<span class="wmeal-item">${r.emoji || '🍽️'}${esc(r.name)}<button data-wdel="${d}:${m.key}:${idx}" title="删除">✕</button></span>`;
+              }).join('')}
+              <button class="wadd" data-wadd="${d}:${m.key}">＋</button>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    </section>`;
+  }).join('');
+}
+
+document.addEventListener('click', e => {
+  const d = e.target.closest('[data-wdel]');
+  if (d) {
+    const [date, meal, idx] = d.dataset.wdel.split(':');
+    getPlan(date)[meal].splice(+idx, 1);
+    save(); renderWeek(); toast('已删除');
+    return;
+  }
+  const a = e.target.closest('[data-wadd]');
+  if (a) {
+    const [date, meal] = a.dataset.wadd.split(':');
+    openPicker(date, meal);
+  }
+});
+
+$('#weekPrev').onclick = () => { curWeekRef = addDays(weekStart(curWeekRef), -7); renderWeek(); };
+$('#weekNext').onclick = () => { curWeekRef = addDays(weekStart(curWeekRef), 7); renderWeek(); };
+$('#btnThisWeek').onclick = () => { curWeekRef = todayStr(); renderWeek(); };
+$('#btnCopyLastWeek').onclick = () => {
+  const ws = weekStart(curWeekRef), lastWs = addDays(ws, -7);
+  let cnt = 0;
+  for (let i = 0; i < 7; i++) {
+    const from = addDays(lastWs, i), to = addDays(ws, i);
+    const fp = state.plan[from];
+    if (!fp) continue;
+    const tp = getPlan(to);
+    MEALS.forEach(m => {
+      const items = (fp[m.key] || []).map(x => Object.assign({}, x, { done: false }));
+      tp[m.key] = tp[m.key].concat(items);
+      cnt += items.length;
+    });
+  }
+  save(); renderWeek();
+  toast(cnt ? `已复制上周 ${cnt} 道菜` : '上周没有排菜，没有可复制的');
+};
+$('#btnWeekShop').onclick = () => { renderShop('week'); nav('shop'); };
+
+/* ================= 视图 6：我的 ================= */
+function renderMe() {
+  renderGoal();
+  renderStats();
+  renderPhotos();
+  $('#setServes').textContent = state.serves;
+  $('#setDark').checked = state.theme === 'dark';
+}
+
+/* 冰箱页（独立视图） */
+function renderFridgePage() {
+  renderFridge();
+  const sel = $('#fridgeIng');
+  if (sel && !sel.options.length) {
+    sel.innerHTML = INGREDIENTS
+      .slice()
+      .sort((a, b) => a.kind.localeCompare(b.kind, 'zh') || a.name.localeCompare(b.name, 'zh'))
+      .map(i => `<option value="${i.id}">${i.emoji} ${esc(i.name)}（${esc(i.kind)}）</option>`).join('');
+  }
+}
+
+/* ---------- 冰箱 ---------- */
+function renderFridge() {
+  const box = $('#fridgeList');
+  const today = todayStr();
+  if (!state.fridge.length) {
+    box.innerHTML = `<p class="muted-sm" style="padding:8px 0">冰箱还是空的，点「+ 添加」记录一下家里的食材吧。</p>`;
+    return;
+  }
+  const sorted = state.fridge.slice().sort((a, b) => (a.exp || '9999') < (b.exp || '9999') ? -1 : 1);
+  box.innerHTML = sorted.map((f, i) => {
+    const g = ing(f.ing);
+    const exp = f.exp;
+    let expTxt = '未记录保质期', expiring = false;
+    if (exp) {
+      const diff = Math.round((parseDate(exp) - parseDate(today)) / 86400000);
+      if (diff < 0) { expTxt = `已过期 ${-diff} 天`; expiring = true; }
+      else if (diff === 0) { expTxt = '今天到期'; expiring = true; }
+      else if (diff <= 2) { expTxt = `${diff} 天后到期`; expiring = true; }
+      else expTxt = `${exp} 到期`;
+    }
+    return `
+    <div class="fridge-item ${expiring ? 'expiring' : ''}">
+      <span class="em">${g.emoji}</span>
+      <div class="f-info">
+        <div class="f-name">${esc(g.name)}</div>
+        <div class="f-meta">${f.qty}${esc(f.unit || '份')} · ${expTxt}${expiring ? ' ⚠️' : ''}</div>
+      </div>
+      <button class="f-del" data-fdel="${i}" title="删除">✕</button>
+    </div>`;
+  }).join('');
+}
+
+document.addEventListener('click', e => {
+  const d = e.target.closest('[data-fdel]');
+  if (d) {
+    // 注意：sorted 后索引与 state.fridge 不同，这里用名称+数量定位更稳
+    renderFridge.delIndex = +d.dataset.fdel;
+    deleteFridgeAt(+d.dataset.fdel);
+  }
+});
+function deleteFridgeAt(sortedIndex) {
+  const today = todayStr();
+  const sorted = state.fridge.slice().sort((a, b) => (a.exp || '9999') < (b.exp || '9999') ? -1 : 1);
+  const target = sorted[sortedIndex];
+  if (!target) return;
+  const realIdx = state.fridge.indexOf(target);
+  if (realIdx > -1) state.fridge.splice(realIdx, 1);
+  save(); renderFridge();
+}
+
+$('#btnFridgeAdd').onclick = () => {
+  const f = $('#fridgeForm');
+  f.hidden = !f.hidden;
+  if (!f.hidden) {
+    $('#fridgeIng').innerHTML = INGREDIENTS.map(i => `<option value="${i.id}">${i.emoji} ${esc(i.name)}</option>`).join('');
+    $('#fridgeExp').value = addDays(todayStr(), 5);
+  }
+};
+$('#btnFridgeCancel').onclick = () => { $('#fridgeForm').hidden = true; };
+$('#btnFridgeSave').onclick = () => {
+  const ingId = $('#fridgeIng').value;
+  const qty = parseFloat($('#fridgeQty').value) || 1;
+  const unit = $('#fridgeUnit').value || '份';
+  const exp = $('#fridgeExp').value;
+  state.fridge.push({ ing: ingId, qty, unit, exp });
+  save(); renderFridge();
+  $('#fridgeForm').hidden = true;
+  toast(`已加入冰箱：${ing(ingId).name}`);
+};
+
+/* ---------- 营养目标 ---------- */
+function renderGoal() {
+  $$('#goalSeg .seg-item').forEach(b => b.classList.toggle('is-active', b.dataset.goal === state.goal.type));
+  $('#goalKcal').value = state.goal.kcal;
+  $('#goalP').value = state.goal.p;
+  $('#goalC').value = state.goal.c;
+  $('#goalF').value = state.goal.f;
+  $('#exerciseKcal').value = state.exercise[todayStr()] || '';
+  const t = dayNutri(todayStr());
+  const ex = state.exercise[todayStr()] || 0;
+  $('#netKcalTip').textContent = `今天摄入 ${Math.round(t.kcal)} - 运动 ${ex} = 净 ${Math.round(t.kcal - ex)} kcal`;
+}
+$$('#goalSeg .seg-item').forEach(b => b.onclick = () => {
+  const g = b.dataset.goal;
+  state.goal.type = g;
+  if (GOALS[g]) Object.assign(state.goal, GOALS[g]);
+  save(); renderGoal();
+  toast(g === 'custom' ? '自定义目标：直接改下面的数字' : `已切换到「${GOALS[g].label}」目标`);
+});
+['#goalKcal', '#goalP', '#goalC', '#goalF'].forEach(sel => {
+  $(sel).addEventListener('change', () => {
+    state.goal.kcal = +$('#goalKcal').value || 2000;
+    state.goal.p = +$('#goalP').value || 0;
+    state.goal.c = +$('#goalC').value || 0;
+    state.goal.f = +$('#goalF').value || 0;
+    state.goal.type = 'custom';
+    $$('#goalSeg .seg-item').forEach(b => b.classList.toggle('is-active', b.dataset.goal === 'custom'));
+    save(); renderGoal();
+  });
+});
+$('#exerciseKcal').addEventListener('change', () => {
+  const v = +$('#exerciseKcal').value || 0;
+  if (v) state.exercise[todayStr()] = v; else delete state.exercise[todayStr()];
+  save(); renderGoal();
+});
+
+/* ---------- 打卡 / 挑战 ---------- */
+function renderStats() {
+  const t = todayStr();
+  const checkins = state.checkins.slice().sort();
+  const total = checkins.length;
+
+  // 连续天数（从今天或昨天往回数）
+  let streak = 0;
+  let cursor = checkins.includes(t) ? t : addDays(t, -1);
+  while (checkins.includes(cursor)) { streak++; cursor = addDays(cursor, -1); }
+
+  $('#statRow').innerHTML = `
+    <div class="stat"><b>${total}</b><small>累计做饭天数</small></div>
+    <div class="stat"><b>${streak}</b><small>连续打卡（天）</small></div>
+    <div class="stat"><b>${state.photos.length}</b><small>照片墙</small></div>
+  `;
+
+  // 30 天挑战
+  const start = state.challengeStart || t;
+  const passed = Math.max(0, Math.round((parseDate(t) - parseDate(start)) / 86400000));
+  const dayNo = Math.min(30, passed + 1);
+  const pct = Math.round(Math.min(30, Math.max(0, passed)) / 30 * 100);
+  $('#challengeBox').innerHTML = `
+    <div class="ch-title">🥗 30 天不点外卖挑战 · 第 ${dayNo} 天</div>
+    <div class="ch-track"><i style="width:${pct}%"></i></div>
+    <div class="muted-sm">已坚持 ${Math.min(30, Math.max(0, passed))} / 30 天 · 开始于 ${start}</div>
+  `;
+  $('#btnCheckin').textContent = checkins.includes(t) ? '✅ 今天已打卡' : '✅ 今天自己做饭了';
+}
+$('#btnCheckin').onclick = () => {
+  const t = todayStr();
+  if (state.checkins.includes(t)) {
+    state.checkins = state.checkins.filter(x => x !== t);
+    toast('已取消今天的打卡');
+  } else {
+    state.checkins.push(t);
+    toast('打卡成功！今天也是自己做饭的一天 🎉');
+  }
+  save(); renderStats();
+};
+
+/* ---------- 照片墙 ---------- */
+function renderPhotos() {
+  const box = $('#photoWall');
+  if (!state.photos.length) {
+    box.innerHTML = `<div class="ph-empty">还没有照片，点击右上角「+ 加照片」记录你的作品吧 📸</div>`;
+    return;
+  }
+  box.innerHTML = state.photos.map((p, i) =>
+    `<div class="ph"><img src="${p.data}" alt="做饭照片 ${i + 1}"><button data-pdel="${i}">✕</button></div>`
+  ).join('');
+}
+$('#btnPhotoAdd').onclick = () => $('#photoInput').click();
+$('#photoInput').onchange = e => {
+  const files = Array.from(e.target.files || []);
+  files.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = ev => {
+      // 压缩到最大 800px 以节省 localStorage
+      const img = new Image();
+      img.onload = () => {
+        const max = 800;
+        let { width: w, height: h } = img;
+        if (w > max || h > max) {
+          const r = Math.min(max / w, max / h);
+          w = Math.round(w * r); h = Math.round(h * r);
+        }
+        const cv = document.createElement('canvas');
+        cv.width = w; cv.height = h;
+        cv.getContext('2d').drawImage(img, 0, 0, w, h);
+        state.photos.push({ ts: Date.now(), data: cv.toDataURL('image/jpeg', 0.72) });
+        save(); renderPhotos(); renderStats();
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+  e.target.value = '';
+};
+document.addEventListener('click', e => {
+  const d = e.target.closest('[data-pdel]');
+  if (d) { state.photos.splice(+d.dataset.pdel, 1); save(); renderPhotos(); renderStats(); }
+});
+
+/* ---------- 设置 ---------- */
+$('#setDark').onchange = e => { setTheme(e.target.checked ? 'dark' : 'light'); };
+$('#setServesMinus').onclick = () => { state.serves = Math.max(1, state.serves - 1); save(); $('#setServes').textContent = state.serves; };
+$('#setServesPlus').onclick  = () => { state.serves = Math.min(10, state.serves + 1); save(); $('#setServes').textContent = state.serves; };
+
+$('#btnExport').onclick = () => {
+  const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `今天吃什么-备份-${todayStr()}.json`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 3000);
+  toast('已导出 JSON 文件');
+};
+$('#btnImport').onclick = () => $('#importInput').click();
+$('#importInput').onchange = e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const d = JSON.parse(ev.target.result);
+      if (typeof d !== 'object' || d === null) throw new Error('格式不对');
+      state = Object.assign(defaultState(), d);
+      save(); applyTheme();
+      nav(currentView);
+      toast('导入成功！');
+    } catch (err) {
+      toast('导入失败：不是有效的备份文件');
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+};
+$('#btnReset').onclick = () => {
+  if (!confirm('确定要清空全部数据吗？计划、冰箱、打卡、照片都会被删除，且无法恢复。')) return;
+  state = defaultState();
+  try { localStorage.removeItem(STORE_KEY); } catch (e) {}
+  save(); applyTheme(); nav('home');
+  toast('已清空全部数据');
+};
+
+/* ================= 详情弹层 ================= */
+function openDetail(rid) {
+  const r = rcp(rid);
+  if (!r) return;
+  const p = $('#sheetPanel');
+  const inPlan = MEALS.some(m => planHas(curDate, m.key, rid));
+
+  p.innerHTML = `
+    <div class="d-hero">
+      <button class="d-close" data-close>✕</button>
+      <div class="d-emoji">${r.emoji || '🍽️'}</div>
+      <h2 class="d-title" id="dTitle">${esc(r.name)}</h2>
+      <div class="d-metas">
+        ${CATEGORY_MAP[r.category] ? `<span class="d-meta">${CATEGORY_MAP[r.category].emoji} ${CATEGORY_MAP[r.category].name}</span>` : ''}
+        <span class="d-meta">⏱ ${r.minutes} 分钟</span>
+        <span class="d-meta">📊 ${esc(r.difficulty)}</span>
+        <span class="d-meta">👥 ${r.serves} 人份</span>
+        <span class="d-meta">💰 约 ¥${r.cost}</span>
+        <span class="d-meta">🍳 ${esc(r.method)}</span>
+        <span class="d-meta">📍 ${esc(r.cuisine)}</span>
+        <span class="d-meta">😋 ${esc(r.taste)}</span>
+      </div>
+    </div>
+
+    <div class="d-body">
+      <section class="d-sec">
+        <h3>营养估算（每份）</h3>
+        <div class="d-nutri">
+          <div class="n"><b>${r.kcal}</b><small>热量 kcal</small></div>
+          <div class="n"><b>${r.protein}g</b><small>蛋白质</small></div>
+          <div class="n"><b>${r.carb}g</b><small>碳水</small></div>
+          <div class="n"><b>${r.fat}g</b><small>脂肪</small></div>
+        </div>
+      </section>
+
+      <section class="d-sec">
+        <h3>主料（${r.main.length}）</h3>
+        <ul class="d-list">
+          ${r.main.map(m => {
+            const has = state.selected.includes(m);
+            return `<li><span class="em">${anyEmoji(m)}</span>${esc(anyName(m))}
+              <span class="amt">${has ? '<span class="tag ok">家里有</span>' : '<span class="tag miss">缺</span>'}</span></li>`;
+          }).join('')}
+        </ul>
+      </section>
+
+      ${(r.sub || []).length ? `
+      <section class="d-sec">
+        <h3>辅料</h3>
+        <ul class="d-list">
+          ${r.sub.map(m => {
+            const has = state.selected.includes(m);
+            return `<li><span class="em">${anyEmoji(m)}</span>${esc(anyName(m))}
+              <span class="amt">${has ? '<span class="tag ok">家里有</span>' : ''}</span></li>`;
+          }).join('')}
+        </ul>
+      </section>` : ''}
+
+      <section class="d-sec">
+        <h3>调料 <span class="hint-inline">（默认家里都有）</span></h3>
+        ${r.seas && r.seas.length ? `
+        <ul class="d-list">
+          ${r.seas.map(s => `<li><span class="em">${anyEmoji(s)}</span>${esc(anyName(s))}
+            <span class="amt"><span class="tag ok">✓ 有</span></span></li>`).join('')}
+        </ul>` : '<div class="d-note">这道菜不需要额外调料 😊</div>'}
+      </section>
+
+      <section class="d-sec">
+        <h3>制作步骤</h3>
+        <ol class="d-steps">
+          ${r.steps.map(s => `<li>${esc(s)}</li>`).join('')}
+        </ol>
+      </section>
+
+      <section class="d-sec">
+        <h3>小贴士</h3>
+        <div class="d-note">💡 ${esc(r.tips)}</div>
+      </section>
+
+      <section class="d-sec">
+        <h3>替代食材</h3>
+        <div class="d-note">🔄 ${esc(r.substitutes)}</div>
+      </section>
+
+      <section class="d-sec">
+        <h3>保存方式</h3>
+        <div class="d-note">🧊 ${esc(r.storage)}</div>
+      </section>
+
+      <section class="d-sec">
+        <h3>容易翻车的地方</h3>
+        <div class="d-note warn">⚠️ ${esc(r.failpoints)}</div>
+      </section>
+
+      <section class="d-sec">
+        <h3>标签 / 厨具 / 过敏原</h3>
+        <div class="chip-wrap">
+          ${(r.tags || []).map(t => `<span class="tag">${esc(t)}</span>`).join('')}
+          ${r.tools.map(t => `<span class="tag">🍳 ${esc(t)}</span>`).join('')}
+          ${r.allergens.length ? r.allergens.map(a => `<span class="tag warn">⚠️ ${esc(a)}</span>`).join('') : '<span class="tag ok">无常见过敏原</span>'}
+        </div>
+      </section>
+
+      <p class="muted-sm">* 热量、营养、成本、时间均为估算值，仅供参考，不构成医疗建议。</p>
+    </div>
+
+    <div class="d-actions">
+      <button class="icon-btn" id="btnPrint" title="打印菜谱">🖨️</button>
+      <button class="btn-outline" id="btnAddPlan">📅 ${inPlan ? '再加一次' : '加入计划'}</button>
+      <button class="btn-primary" id="btnQuickDinner">🍽️ 加到今晚</button>
+    </div>
+  `;
+  $('#sheet').hidden = false;
+  document.body.style.overflow = 'hidden';
+
+  $('#btnPrint').onclick = () => window.print();
+  $('#btnAddPlan').onclick = () => { openPicker(curDate, guessMeal(), rid); };
+  $('#btnQuickDinner').onclick = () => {
+    addToPlan(curDate, 'dinner', rid, state.serves);
+    toast(`已加入今天晚餐：${r.name}`);
+    closeSheet();
+  };
+}
+
+function guessMeal() {
+  const h = new Date().getHours();
+  if (h < 10) return 'breakfast';
+  if (h < 15) return 'lunch';
+  if (h < 21) return 'dinner';
+  return 'snack';
+}
+
+/* 详情触发（事件委托） */
+document.addEventListener('click', e => {
+  const d = e.target.closest('[data-detail]');
+  if (d) { openDetail(d.dataset.detail); }
+});
+
+/* ================= 添加到计划的选择器 ================= */
+function openPicker(date, meal, rid) {
+  const p = $('#sheetPanel');
+  const isStep1 = !rid;
+
+  if (isStep1) {
+    // 第一步：选菜
+    const list = state._lastRec ? recommend(state.selected, { limit: 40 }).map(x => x.recipe) : RECIPES.slice();
+    const items = list;
+    p.innerHTML = `
+      <div class="d-body" style="padding-bottom:0">
+        <div class="pick-head">
+          <h3>选择要加的菜</h3>
+          <button class="d-close" style="position:static;background:var(--bg-2)" data-close>✕</button>
+        </div>
+        <p class="pick-sub">加入 ${dateLabel(date)} · ${MEAL_MAP[meal].emoji} ${MEAL_MAP[meal].name}</p>
+        <div class="cat-seg" id="pickCatSeg">
+          <button class="seg-item is-active" data-pcat="">全部</button>
+          <button class="seg-item" data-pcat="dish">🍳 菜品</button>
+          <button class="seg-item" data-pcat="soup">🍲 汤品</button>
+          <button class="seg-item" data-pcat="porridge">🥣 粥品</button>
+          <button class="seg-item" data-pcat="staple">🍚 主食</button>
+        </div>
+      </div>
+      <div class="d-body" style="padding-top:0" id="pickList">
+        ${items.slice(0, 200).map(r => {
+          const c = CATEGORY_MAP[r.category] || { emoji: '', name: '' };
+          return `
+          <div class="pick-day" data-pickrid="${r.id}">
+            <span class="em">${r.emoji || '🍽️'}</span>
+            <div class="pd-info"><b>${esc(r.name)}</b><small>${c.emoji}${c.name} · ${r.kcal} kcal · ${r.minutes} 分 · ${esc(r.difficulty)}</small></div>
+            <span class="arrow">›</span>
+          </div>`;
+        }).join('')}
+      </div>`;
+    $('#sheet').hidden = false;
+    document.body.style.overflow = 'hidden';
+    p._ctx = { date, meal };
+
+    // 弹层内的类型切换
+    let pickCat = '';
+    $$('#pickCatSeg .seg-item', p).forEach(b => b.onclick = () => {
+      pickCat = b.dataset.pcat;
+      $$('#pickCatSeg .seg-item', p).forEach(x => x.classList.toggle('is-active', x === b));
+      const arr = pickCat ? RECIPES.filter(x => x.category === pickCat) : (state._lastRec ? recommend(state.selected, { limit: 40 }).map(x => x.recipe) : RECIPES);
+      $('#pickList').innerHTML = arr.slice(0, 200).map(r => {
+        const c = CATEGORY_MAP[r.category] || { emoji: '', name: '' };
+        return `
+        <div class="pick-day" data-pickrid="${r.id}">
+          <span class="em">${r.emoji || '🍽️'}</span>
+          <div class="pd-info"><b>${esc(r.name)}</b><small>${c.emoji}${c.name} · ${r.kcal} kcal · ${r.minutes} 分 · ${esc(r.difficulty)}</small></div>
+          <span class="arrow">›</span>
+        </div>`;
+      }).join('');
+    });
+    return;
+  }
+
+  // 第二步：选份数
+  const r = rcp(rid);
+  p.innerHTML = `
+    <div class="d-body">
+      <div class="pick-head">
+        <h3>加入 ${MEAL_MAP[meal].emoji} ${MEAL_MAP[meal].name}</h3>
+        <button class="d-close" style="position:static;background:var(--bg-2)" data-close>✕</button>
+      </div>
+      <p class="pick-sub">${r.emoji || '🍽️'} ${esc(r.name)} · ${dateLabel(date)}</p>
+      <div class="card" style="margin-bottom:12px">
+        <div class="serving-row">
+          <span>份数</span>
+          <div class="stepper">
+            <button id="pvMinus">−</button><b id="pvNum">${state.serves}</b><button id="pvPlus">+</button>
+          </div>
+        </div>
+        <div class="serving-row" style="border-top:1px dashed var(--line)">
+          <span>预计热量</span><b id="pvKcal">${r.kcal * state.serves} kcal</b>
+        </div>
+      </div>
+      <button class="btn-primary block" id="pvOk">确认加入</button>
+    </div>`;
+
+  let n = state.serves;
+  const upd = () => { $('#pvNum').textContent = n; $('#pvKcal').textContent = (r.kcal * n) + ' kcal'; };
+  $('#pvMinus').onclick = () => { n = Math.max(1, n - 1); upd(); };
+  $('#pvPlus').onclick  = () => { n = Math.min(10, n + 1); upd(); };
+  $('#pvOk').onclick = () => {
+    addToPlan(date, meal, rid, n);
+    closeSheet();
+    toast(`已加入 ${dateLabel(date)} 的${MEAL_MAP[meal].name}`);
+    if (currentView === 'plan') { renderPlan(); }
+    if (currentView === 'week') { renderWeek(); }
+  };
+
+  $('#sheet').hidden = false;
+  document.body.style.overflow = 'hidden';
+  p._ctx = { date, meal };
+}
+
+document.addEventListener('click', e => {
+  const pr = e.target.closest('[data-pickrid]');
+  if (pr) {
+    const ctx = $('#sheetPanel')._ctx || {};
+    openPicker(ctx.date || curDate, ctx.meal || guessMeal(), pr.dataset.pickrid);
+  }
+});
+
+/* ================= 弹层关闭 ================= */
+function closeSheet() {
+  $('#sheet').hidden = true;
+  $('#wheelSheet').hidden = true;
+  document.body.style.overflow = '';
+}
+document.addEventListener('click', e => {
+  if (e.target.closest('[data-close]')) closeSheet();
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeSheet();
+});
+
+/* ================= 转盘 ================= */
+function openWheel() {
+  const pool = state.selected.length ? recommend(state.selected, { limit: 8 }).map(x => x.recipe) : RECIPES.slice();
+  const list = pool.length ? pool.slice(0, 8) : RECIPES.slice(0, 8);
+
+  $('#wheelPanel').innerHTML = `
+    <div class="pick-head" style="width:100%">
+      <h3>今天吃什么 · 转盘</h3>
+      <button class="d-close" style="position:static;background:var(--bg-2)" data-close>✕</button>
+    </div>
+    <p class="muted-sm" style="margin-bottom:12px">${state.selected.length ? '根据你选的食材生成' : '从全部菜谱里随机'}</p>
+    <div class="wheel-wrap">
+      <div class="wheel-pin">📍</div>
+      <canvas id="wheelCanvas" width="540" height="540" style="width:270px;height:270px"></canvas>
+    </div>
+    <div class="wheel-result" id="wheelResult">点下面按钮开始转动</div>
+    <div class="wheel-btns">
+      <button class="btn-primary" id="btnSpin">🎡 开始转动</button>
+      <button class="btn-outline" id="btnReshuffle">🔀 换一批</button>
+    </div>
+  `;
+  $('#wheelSheet').hidden = false;
+  document.body.style.overflow = 'hidden';
+
+  const colors = ['#F4A259', '#7FA860', '#6C93C7', '#A28BC7', '#E0664F', '#E0A84C', '#5FB0A5', '#D98BB0'];
+  const cv = $('#wheelCanvas');
+  const ctx = cv.getContext('2d');
+  const R = cv.width / 2;
+  const n = list.length;
+  const arc = Math.PI * 2 / n;
+  let rot = 0;
+
+  function draw() {
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    for (let i = 0; i < n; i++) {
+      const a0 = rot + i * arc, a1 = a0 + arc;
+      ctx.beginPath();
+      ctx.moveTo(R, R);
+      ctx.arc(R, R, R - 6, a0, a1);
+      ctx.closePath();
+      ctx.fillStyle = colors[i % colors.length];
+      ctx.fill();
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      // 文字
+      ctx.save();
+      ctx.translate(R, R);
+      ctx.rotate(a0 + arc / 2);
+      ctx.textAlign = 'right';
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 26px sans-serif';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(list[i].name.slice(0, 5), R - 26, 0);
+      ctx.restore();
+    }
+    ctx.beginPath();
+    ctx.arc(R, R, 34, 0, Math.PI * 2);
+    ctx.fillStyle = '#fff';
+    ctx.fill();
+    ctx.fillStyle = '#F4A259';
+    ctx.font = 'bold 26px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('吃', R, R);
+  }
+  draw();
+
+  let spinning = false;
+  $('#btnSpin').onclick = () => {
+    if (spinning) return;
+    spinning = true;
+    const target = Math.random() * Math.PI * 2;
+    const total = Math.PI * 2 * 6 + target;
+    const t0 = performance.now(), dur = 3600;
+    const start = rot;
+    function anim(t) {
+      const k = Math.min(1, (t - t0) / dur);
+      const e = 1 - Math.pow(1 - k, 3);           // easeOutCubic
+      rot = start + total * e;
+      draw();
+      if (k < 1) requestAnimationFrame(anim);
+      else {
+        spinning = false;
+        // 指针在正上方（-90°）
+        const norm = ((-Math.PI / 2 - rot) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
+        const idx = Math.floor(norm / arc) % n;
+        const win = list[idx];
+        $('#wheelResult').innerHTML = `🎉 就吃 <b style="color:var(--brand-d)">${esc(win.name)}</b> 吧！`;
+        $('#wheelResult').dataset.rid = win.id;
+      }
+    }
+    requestAnimationFrame(anim);
+  };
+  $('#btnReshuffle').onclick = () => { closeSheet(); setTimeout(openWheel, 120); };
+  $('#wheelResult').onclick = () => {
+    const rid = $('#wheelResult').dataset.rid;
+    if (rid) openDetail(rid);
+  };
+}
+
+/* ================= 随机一道菜 ================= */
+function randomDish() {
+  const pool = state.selected.length ? recommend(state.selected, { limit: 12 }).map(x => x.recipe) : [];
+  const list = pool.length ? pool : RECIPES;
+  const r = list[Math.floor(Math.random() * list.length)];
+  openDetail(r.id);
+}
+
+/* ================= 首页按钮 ================= */
+$('#btnRecommend').onclick = doRecommend;
+$('#btnClearSel').onclick = () => {
+  state.selected = []; save(); renderSelectedChips(); renderIngGroups();
+  toast('已清空所选食材');
+};
+$('#btnAllIn').onclick = () => {
+  const ids = [...new Set(state.fridge.map(f => f.ing))].filter(id => ING_MAP[id]);
+  if (!ids.length) { toast('冰箱还是空的，先去「冰箱」添加库存吧'); return; }
+  state.selected = [...new Set(state.selected.concat(ids))];
+  save(); renderSelectedChips(); renderIngGroups();
+  toast(`已选中冰箱里的 ${ids.length} 种食材`);
+};
+$('#btnRandom').onclick = randomDish;
+$('#btnWheel').onclick = openWheel;
+
+/* 冰箱页：把库存在用的食材全选到首页「我有的食材」 */
+document.addEventListener('click', e => {
+  if (e.target.closest('#btnFridgeToSel')) {
+    const ids = [...new Set(state.fridge.map(f => f.ing))].filter(id => ING_MAP[id]);
+    if (!ids.length) { toast('冰箱还是空的，点「+ 添加」记一笔吧'); return; }
+    state.selected = [...new Set(state.selected.concat(ids))];
+    save();
+    toast(`已把冰箱里 ${ids.length} 种食材选到首页`);
+    nav('home');
+  }
+});
+
+/* ================= 搜索 ================= */
+$('#btnSearch').onclick = () => {
+  const sb = $('#searchbar');
+  sb.hidden = !sb.hidden;
+  if (!sb.hidden) { $('#searchInput').focus(); nav('recipes'); }
+};
+$('#btnSearchClose').onclick = () => {
+  $('#searchbar').hidden = true;
+  $('#searchInput').value = '';
+  renderRecipes();
+};
+$('#searchInput').addEventListener('input', () => { if (currentView === 'recipes') renderRecipes(); });
+
+/* ================= 主题 ================= */
+function applyTheme() {
+  document.documentElement.dataset.theme = state.theme;
+  $('#btnTheme').textContent = state.theme === 'dark' ? '☀️' : '🌙';
+}
+function setTheme(t) {
+  state.theme = t;
+  save(); applyTheme();
+  const cb = $('#setDark'); if (cb) cb.checked = t === 'dark';
+}
+$('#btnTheme').onclick = () => setTheme(state.theme === 'dark' ? 'light' : 'dark');
+
+/* ================= 快捷键 ================= */
+document.addEventListener('keydown', e => {
+  const inInput = /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName);
+  if (e.key === '/' && !inInput) { e.preventDefault(); $('#btnSearch').click(); return; }
+  if (inInput) return;
+  if (e.key === 'r' || e.key === 'R') randomDish();
+  if (e.key === '1') nav('home');
+  if (e.key === '2') nav('plan');
+  if (e.key === '3') nav('recipes');
+  if (e.key === '4') nav('shop');
+  if (e.key === '5') nav('fridge');
+  if (e.key === '6') nav('me');
+});
+
+/* ================= 初始化 ================= */
+function init() {
+  fillFilterOptions();
+  avoidList = [];
+
+  const params = new URLSearchParams(location.search);
+
+  // 主题可通过 URL 临时指定：?theme=dark / light
+  const qt = params.get('theme');
+  if (qt === 'dark' || qt === 'light') { state.theme = qt; state._themeFromUrl = true; }
+
+  applyTheme();
+
+  // 演示数据（?demo=1），方便预览效果 / 截图
+  if (params.get('demo') === '1' && !state._demoLoaded) {
+    seedDemo();
+    state._demoLoaded = true;
+  }
+
+  // 支持通过 URL 参数直达某个页面：?view=plan / recipes / shop / week / fridge / me
+  const qv = params.get('view');
+  const valid = ['home', 'plan', 'recipes', 'shop', 'week', 'fridge', 'me'];
+  const startView = valid.includes(qv) ? qv : 'home';
+  if (params.get('q')) { $('#searchInput').value = params.get('q'); }
+
+  // ?cat=dish|soup|porridge|staple 预选菜谱类型
+  const qc = params.get('cat');
+  if (['dish', 'soup', 'porridge', 'staple'].includes(qc)) {
+    catFilter = qc;
+    setTimeout(() => {
+      $$('#catSeg .seg-item').forEach(x => x.classList.toggle('is-active', x.dataset.cat === qc));
+      if (currentView === 'recipes') renderRecipes();
+    }, 0);
+  }
+
+  nav(startView);
+
+  // 直接打开某道菜的详情：?open=r01
+  if (params.get('open')) {
+    setTimeout(() => openDetail(params.get('open')), 250);
+  }
+
+  // 首次使用提示
+  if (!localStorage.getItem(STORE_KEY)) {
+    setTimeout(() => toast('欢迎！先在首页勾选家里有的食材吧 🍳', 3000), 600);
+  }
+}
+
+/* 演示数据种子 */
+function seedDemo() {
+  const t = todayStr();
+  state.selected = ['tomato', 'egg', 'potato', 'greenpepper', 'onion', 'tofu', 'shrimp', 'chicken', 'scallion', 'bokchoy', 'kelp', 'rice'];
+  state._lastRec = true;
+
+  // 今天：四餐（含汤和粥）
+  addToPlan(t, 'breakfast', 'p02', 1);              // 小米南瓜粥
+  addToPlan(t, 'breakfast', 'r24', 1);              // 韭菜炒鸡蛋
+  getPlan(t).breakfast[0].done = true;
+  addToPlan(t, 'lunch', 'r01', 1);                  // 番茄炒蛋
+  addToPlan(t, 'lunch', 'm02', 1);                  // 蛋炒饭
+  addToPlan(t, 'dinner', 'r03', 1);                 // 麻婆豆腐
+  addToPlan(t, 'dinner', 'r05', 1);                 // 蒜蓉炒青菜
+  addToPlan(t, 'dinner', 's01', 1);                 // 番茄鸡蛋汤
+  addToPlan(t, 'snack', 'r15', 1);                  // 凉拌黄瓜
+
+  // 明天 / 后天
+  const t1 = addDays(t, 1), t2 = addDays(t, 2);
+  addToPlan(t1, 'dinner', 's02', 1);                // 冬瓜排骨汤
+  addToPlan(t1, 'dinner', 'r25', 1);                // 蒜蓉西兰花
+  addToPlan(t1, 'breakfast', 'p01', 1);             // 白米粥
+  addToPlan(t2, 'dinner', 's04', 1);                // 玉米胡萝卜排骨汤
+  addToPlan(t2, 'dinner', 'm03', 1);                // 咖喱土豆鸡饭
+
+  // 本周其余几天
+  const ws = weekStart(t);
+  for (let i = 0; i < 7; i++) {
+    const d = addDays(ws, i);
+    if (d === t || d === t1 || d === t2) continue;
+    if (i % 2 === 0) { addToPlan(d, 'lunch', 'r02', 1); addToPlan(d, 'dinner', 's07', 1); }
+    else { addToPlan(d, 'dinner', 'm01', 1); addToPlan(d, 'breakfast', 'p05', 1); }
+  }
+
+  // 冰箱（含快过期）
+  state.fridge = [
+    { ing: 'egg', qty: 6, unit: '个', exp: addDays(t, 6) },
+    { ing: 'tomato', qty: 3, unit: '个', exp: addDays(t, 1) },
+    { ing: 'potato', qty: 2, unit: '个', exp: addDays(t, 10) },
+    { ing: 'tofu', qty: 1, unit: '盒', exp: todayStr() },
+    { ing: 'chicken', qty: 1, unit: '块', exp: addDays(t, 2) },
+    { ing: 'onion', qty: 2, unit: '个', exp: addDays(t, 12) },
+    { ing: 'bokchoy', qty: 1, unit: '把', exp: addDays(t, 2) },
+    { ing: 'mushroom', qty: 1, unit: '份', exp: addDays(t, 7) },
+  ];
+
+  // 打卡：最近 5 天（含今天）
+  state.checkins = [0, 1, 2, 3, 4].map(i => addDays(t, -i));
+  state.challengeStart = addDays(t, -11);
+
+  // 运动消耗
+  state.exercise[t] = 260;
+
+  save();
+}
+
+/* PWA 注册（file:// 下会自动跳过，安全） */
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+
+init();
+
+/* 暴露少量接口便于调试 */
+window.APP = { state, nav, openDetail, recommend, save };
+
+})();
+
+</script>
 </body>
 </html>
